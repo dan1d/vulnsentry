@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_25_225204) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_25_231300) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -100,6 +100,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_25_225204) do
     t.string "upstream_repo", default: "ruby/ruby", null: false
     t.index ["candidate_bump_id"], name: "index_pull_requests_on_candidate_bump_id", unique: true
     t.index ["upstream_repo", "pr_number"], name: "index_pull_requests_on_upstream_repo_and_pr_number", unique: true, where: "(pr_number IS NOT NULL)"
+  end
+
+  create_table "system_events", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "kind", null: false
+    t.text "message"
+    t.datetime "occurred_at", null: false
+    t.jsonb "payload", default: {}, null: false
+    t.string "status", null: false
+    t.datetime "updated_at", null: false
+    t.index ["kind", "occurred_at"], name: "index_system_events_on_kind_and_occurred_at"
+    t.index ["status", "occurred_at"], name: "index_system_events_on_status_and_occurred_at"
   end
 
   add_foreign_key "candidate_bumps", "advisories"

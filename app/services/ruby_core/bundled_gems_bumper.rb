@@ -23,4 +23,3 @@ module RubyCore
     end
   end
 end
-

@@ -10,5 +10,4 @@ RSpec.describe "Admin::Dashboards", type: :request do
     get "/admin", headers: admin_headers
     expect(response).to have_http_status(:success)
   end
-
 end

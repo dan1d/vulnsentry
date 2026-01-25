@@ -20,7 +20,7 @@ module Github
     end
 
     def run!(*args)
-      cmd = ["gh", *args.map(&:to_s)]
+      cmd = [ "gh", *args.map(&:to_s) ]
       stdout, stderr, status = Open3.capture3(@env, *cmd)
       return stdout if status.success?
 
@@ -40,4 +40,3 @@ module Github
     end
   end
 end
-

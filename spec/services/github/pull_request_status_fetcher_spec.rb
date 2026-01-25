@@ -27,4 +27,3 @@ RSpec.describe Github::PullRequestStatusFetcher do
     expect(data[:status]).to eq("merged")
   end
 end
-

@@ -24,4 +24,3 @@ RSpec.describe RubyCore::DiffValidator do
     end.to raise_error(RubyCore::DiffValidator::ValidationError, /more than one line/i)
   end
 end
-

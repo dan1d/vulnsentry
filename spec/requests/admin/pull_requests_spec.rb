@@ -14,5 +14,4 @@ RSpec.describe "Admin::PullRequests", type: :request do
     get "/admin/pull_requests/#{pr.id}", headers: admin_headers
     expect(response).to have_http_status(:success)
   end
-
 end

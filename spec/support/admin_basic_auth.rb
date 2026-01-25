@@ -8,4 +8,3 @@ end
 RSpec.configure do |config|
   config.include AdminBasicAuth, type: :request
 end
-

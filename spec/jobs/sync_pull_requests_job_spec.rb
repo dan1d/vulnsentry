@@ -20,4 +20,3 @@ RSpec.describe SyncPullRequestsJob, type: :job do
     expect(pr.last_synced_at).to be_present
   end
 end
-

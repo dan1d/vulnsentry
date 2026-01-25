@@ -19,5 +19,4 @@ RSpec.describe "Admin::CandidateBumps", type: :request do
     expect(response).to have_http_status(:redirect)
     expect(c.reload.state).to eq("approved")
   end
-
 end

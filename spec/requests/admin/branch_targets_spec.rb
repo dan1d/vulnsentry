@@ -19,5 +19,4 @@ RSpec.describe "Admin::BranchTargets", type: :request do
     expect(response).to have_http_status(:redirect)
     expect(bt.reload.enabled).to be(false)
   end
-
 end

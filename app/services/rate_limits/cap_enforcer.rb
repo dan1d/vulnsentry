@@ -66,4 +66,3 @@ module RateLimits
       end
   end
 end
-

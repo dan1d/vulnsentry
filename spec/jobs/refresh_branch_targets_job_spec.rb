@@ -4,10 +4,12 @@ RSpec.describe RefreshBranchTargetsJob, type: :job do
   it "creates/updates branch targets for supported branches and ensures master" do
     fake_fetcher = instance_double(RubyLang::MaintenanceBranches)
     allow(RubyLang::MaintenanceBranches).to receive(:new).and_return(fake_fetcher)
-    allow(fake_fetcher).to receive(:fetch_supported).and_return([
+    allow(fake_fetcher).to receive(:fetch_html).and_return("<html/>")
+    allow(fake_fetcher).to receive(:parse_supported_html).and_return([
       RubyLang::MaintenanceBranches::Branch.new("3.4", "normal"),
       RubyLang::MaintenanceBranches::Branch.new("3.2", "security")
     ])
+    allow_any_instance_of(Ai::MaintenanceBranchesCrossCheck).to receive(:enabled?).and_return(false)
 
     described_class.perform_now
 
@@ -16,4 +18,3 @@ RSpec.describe RefreshBranchTargetsJob, type: :job do
     expect(BranchTarget.find_by!(name: "master")).to be_present
   end
 end
-

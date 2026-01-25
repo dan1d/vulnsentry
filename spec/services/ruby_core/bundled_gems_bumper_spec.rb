@@ -23,4 +23,3 @@ RSpec.describe RubyCore::BundledGemsBumper do
     end.to raise_error(RubyCore::BundledGemsFile::ParseError, /gem not found/i)
   end
 end
-

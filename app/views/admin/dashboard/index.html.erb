@@ -75,5 +75,27 @@
         <% end %>
       </div>
     </div>
+
+    <div class="rounded border bg-white">
+      <div class="border-b px-4 py-3 font-medium">Recent system events</div>
+      <div class="p-4">
+        <% if @events.any? %>
+          <ul class="space-y-2 text-sm">
+            <% @events.each do |ev| %>
+              <li class="flex items-start justify-between gap-4">
+                <div class="truncate">
+                  <span class="font-mono"><%= ev.kind %></span>
+                  <span class="ml-2 inline-flex items-center rounded px-2 py-1 text-xs <%= ev.status == "ok" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800" %>"><%= ev.status %></span>
+                  <div class="text-gray-600 truncate"><%= ev.message %></div>
+                </div>
+                <div class="text-xs text-gray-500 whitespace-nowrap"><%= ev.occurred_at.strftime("%Y-%m-%d %H:%M") %></div>
+              </li>
+            <% end %>
+          </ul>
+        <% else %>
+          <div class="text-sm text-gray-600">No events yet.</div>
+        <% end %>
+      </div>
+    </div>
   </div>
 </div>

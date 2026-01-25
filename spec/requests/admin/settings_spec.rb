@@ -16,5 +16,4 @@ RSpec.describe "Admin::Settings", type: :request do
     expect(response).to have_http_status(:redirect)
     expect(BotConfig.instance.global_daily_cap).to eq(2)
   end
-
 end

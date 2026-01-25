@@ -15,7 +15,7 @@ module RubyCore
       old_lines.each_with_index do |old_line, idx|
         new_line = new_lines[idx]
         next if old_line == new_line
-        changed << [idx + 1, old_line, new_line]
+        changed << [ idx + 1, old_line, new_line ]
       end
 
       raise ValidationError, "no changes detected" if changed.empty?
@@ -26,4 +26,3 @@ module RubyCore
     end
   end
 end
-

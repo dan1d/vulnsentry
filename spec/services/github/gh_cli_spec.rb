@@ -9,4 +9,3 @@ RSpec.describe Github::GhCli do
     end.to raise_error(Github::GhCli::CommandError)
   end
 end
-

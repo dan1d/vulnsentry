@@ -29,4 +29,3 @@ class SyncPullRequestsJob < ApplicationJob
       nil
     end
 end
-

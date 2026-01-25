@@ -38,7 +38,7 @@ module RubyCore
 
       lines = @content.lines
       lines[entry.line_number - 1] = new_line
-      [lines.join, old_line, new_line]
+      [ lines.join, old_line, new_line ]
     end
 
     private
@@ -64,4 +64,3 @@ module RubyCore
       end
   end
 end
-
