@@ -1,0 +1,29 @@
+<%= render "admin/shared/nav" %>
+
+<div class="mx-auto max-w-3xl px-4 py-6 space-y-4">
+  <div>
+    <h1 class="text-2xl font-semibold">Edit branch</h1>
+    <p class="text-sm text-gray-600 font-mono"><%= @branch_target.name %></p>
+  </div>
+
+  <div class="rounded border bg-white p-4">
+    <%= form_with model: @branch_target, url: admin_branch_target_path(@branch_target), method: :patch do |f| %>
+      <div class="space-y-4">
+        <div class="flex items-center gap-2">
+          <%= f.check_box :enabled, class: "h-4 w-4" %>
+          <%= f.label :enabled, class: "text-sm" %>
+        </div>
+
+        <div>
+          <%= f.label :maintenance_status, class: "block text-sm font-medium" %>
+          <%= f.select :maintenance_status, BranchTarget::MAINTENANCE_STATUSES, {}, class: "mt-1 w-full rounded border px-3 py-2 text-sm" %>
+        </div>
+
+        <div class="flex gap-3">
+          <%= f.submit "Save", class: "rounded bg-black px-4 py-2 text-white text-sm" %>
+          <%= link_to "Back", admin_branch_targets_path, class: "rounded border px-4 py-2 text-sm" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

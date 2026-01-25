@@ -1,0 +1,35 @@
+<%= render "admin/shared/nav" %>
+
+<div class="mx-auto max-w-6xl px-4 py-6 space-y-4">
+  <div>
+    <h1 class="text-2xl font-semibold">Candidate bumps</h1>
+    <p class="text-sm text-gray-600">Review and approve before creating any PR.</p>
+  </div>
+
+  <div class="rounded border bg-white overflow-hidden">
+    <table class="min-w-full text-sm">
+      <thead class="bg-gray-50 text-gray-700">
+        <tr>
+          <th class="px-4 py-2 text-left">Branch</th>
+          <th class="px-4 py-2 text-left">Gem</th>
+          <th class="px-4 py-2 text-left">Bump</th>
+          <th class="px-4 py-2 text-left">State</th>
+          <th class="px-4 py-2"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y">
+        <% @candidate_bumps.each do |c| %>
+          <tr>
+            <td class="px-4 py-2 font-mono"><%= c.base_branch %></td>
+            <td class="px-4 py-2"><%= c.gem_name %></td>
+            <td class="px-4 py-2 font-mono"><%= c.current_version %> → <%= c.target_version %></td>
+            <td class="px-4 py-2"><%= c.state %></td>
+            <td class="px-4 py-2 text-right">
+              <%= link_to "View", admin_candidate_bump_path(c), class: "text-blue-600 hover:underline" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

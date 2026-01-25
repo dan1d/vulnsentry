@@ -1,0 +1,79 @@
+<%= render "admin/shared/nav" %>
+
+<div class="mx-auto max-w-6xl px-4 py-6 space-y-6">
+  <div class="flex items-start justify-between gap-6">
+    <div>
+      <h1 class="text-2xl font-semibold">Dashboard</h1>
+      <p class="text-sm text-gray-600">Human-gated PR automation for bundled gems.</p>
+    </div>
+    <div class="text-sm">
+      <div class="font-medium">Safety</div>
+      <div class="mt-1">
+        <span class="inline-flex items-center rounded px-2 py-1 text-xs <%= @config.emergency_stop? ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800" %>">
+          emergency_stop: <%= @config.emergency_stop? %>
+        </span>
+        <span class="ml-2 inline-flex items-center rounded px-2 py-1 text-xs <%= @config.require_human_approval? ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800" %>">
+          require_human_approval: <%= @config.require_human_approval? %>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="rounded border bg-white p-4">
+      <div class="text-sm text-gray-600">Open PRs</div>
+      <div class="mt-1 text-2xl font-semibold"><%= @open_prs.count %></div>
+    </div>
+    <div class="rounded border bg-white p-4">
+      <div class="text-sm text-gray-600">Branch targets</div>
+      <div class="mt-1 text-2xl font-semibold"><%= @branch_targets.count %></div>
+    </div>
+    <div class="rounded border bg-white p-4">
+      <div class="text-sm text-gray-600">Recent candidates</div>
+      <div class="mt-1 text-2xl font-semibold"><%= @recent_candidates.count %></div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="rounded border bg-white">
+      <div class="border-b px-4 py-3 font-medium">Recent candidates</div>
+      <div class="p-4">
+        <% if @recent_candidates.any? %>
+          <ul class="space-y-2 text-sm">
+            <% @recent_candidates.each do |c| %>
+              <li class="flex items-center justify-between gap-4">
+                <div class="truncate">
+                  <%= link_to "#{c.base_branch}: #{c.gem_name} #{c.current_version} → #{c.target_version}", admin_candidate_bump_path(c), class: "hover:underline" %>
+                  <span class="ml-2 text-gray-500">(<%= c.state %>)</span>
+                </div>
+                <div class="text-xs text-gray-500"><%= c.created_at.strftime("%Y-%m-%d %H:%M") %></div>
+              </li>
+            <% end %>
+          </ul>
+        <% else %>
+          <div class="text-sm text-gray-600">No candidates yet.</div>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="rounded border bg-white">
+      <div class="border-b px-4 py-3 font-medium">Open PRs</div>
+      <div class="p-4">
+        <% if @open_prs.any? %>
+          <ul class="space-y-2 text-sm">
+            <% @open_prs.each do |pr| %>
+              <li class="flex items-center justify-between gap-4">
+                <div class="truncate">
+                  <%= link_to "##{pr.pr_number || "?"} #{pr.candidate_bump.base_branch}: #{pr.candidate_bump.gem_name} → #{pr.candidate_bump.target_version}", admin_pull_request_path(pr), class: "hover:underline" %>
+                </div>
+                <div class="text-xs text-gray-500"><%= pr.created_at.strftime("%Y-%m-%d %H:%M") %></div>
+              </li>
+            <% end %>
+          </ul>
+        <% else %>
+          <div class="text-sm text-gray-600">No open PRs recorded yet.</div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

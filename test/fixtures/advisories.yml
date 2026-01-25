@@ -1,0 +1,27 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  gem_name: MyString
+  cve: MyString
+  source: MyString
+  advisory_url: MyText
+  affected_requirement: MyText
+  fixed_version: MyString
+  severity: MyString
+  raw: 
+  published_at: 2026-01-25 19:52:01
+  withdrawn_at: 2026-01-25 19:52:01
+  fingerprint: MyString
+
+two:
+  gem_name: MyString
+  cve: MyString
+  source: MyString
+  advisory_url: MyText
+  affected_requirement: MyText
+  fixed_version: MyString
+  severity: MyString
+  raw: 
+  published_at: 2026-01-25 19:52:01
+  withdrawn_at: 2026-01-25 19:52:01
+  fingerprint: MyString

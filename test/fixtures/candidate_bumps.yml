@@ -1,0 +1,35 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  advisory: one
+  branch_target: one
+  base_branch: MyString
+  gem_name: MyString
+  current_version: MyString
+  target_version: MyString
+  state: MyString
+  blocked_reason: MyText
+  proposed_diff: MyText
+  review_notes: MyText
+  approved_at: 2026-01-25 19:52:01
+  approved_by: MyString
+  created_pr_at: 2026-01-25 19:52:01
+  last_attempted_at: 2026-01-25 19:52:01
+  next_eligible_at: 2026-01-25 19:52:01
+
+two:
+  advisory: two
+  branch_target: two
+  base_branch: MyString
+  gem_name: MyString
+  current_version: MyString
+  target_version: MyString
+  state: MyString
+  blocked_reason: MyText
+  proposed_diff: MyText
+  review_notes: MyText
+  approved_at: 2026-01-25 19:52:01
+  approved_by: MyString
+  created_pr_at: 2026-01-25 19:52:01
+  last_attempted_at: 2026-01-25 19:52:01
+  next_eligible_at: 2026-01-25 19:52:01

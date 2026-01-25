@@ -1,0 +1,77 @@
+<%= render "admin/shared/nav" %>
+
+<div class="mx-auto max-w-4xl px-4 py-6 space-y-4">
+  <div class="flex items-start justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-semibold">Edit settings</h1>
+      <p class="text-sm text-gray-600">Changes apply immediately.</p>
+    </div>
+    <div>
+      <%= link_to "Back", admin_settings_path, class: "rounded border px-4 py-2 text-sm" %>
+    </div>
+  </div>
+
+  <div class="rounded border bg-white p-4">
+    <%= form_with model: @config, url: admin_settings_path, method: :patch do |f| %>
+      <div class="space-y-4 text-sm">
+        <div class="flex items-center gap-2">
+          <%= f.check_box :require_human_approval, class: "h-4 w-4" %>
+          <%= f.label :require_human_approval %>
+        </div>
+        <div class="flex items-center gap-2">
+          <%= f.check_box :emergency_stop, class: "h-4 w-4" %>
+          <%= f.label :emergency_stop %>
+        </div>
+        <div class="flex items-center gap-2">
+          <%= f.check_box :allow_draft_pr, class: "h-4 w-4" %>
+          <%= f.label :allow_draft_pr %>
+        </div>
+
+        <div class="pt-2 font-medium">Caps</div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <%= f.label :global_daily_cap, class: "block font-medium" %>
+            <%= f.number_field :global_daily_cap, class: "mt-1 w-full rounded border px-3 py-2" %>
+          </div>
+          <div>
+            <%= f.label :global_hourly_cap, class: "block font-medium" %>
+            <%= f.number_field :global_hourly_cap, class: "mt-1 w-full rounded border px-3 py-2" %>
+          </div>
+          <div>
+            <%= f.label :per_branch_daily_cap, class: "block font-medium" %>
+            <%= f.number_field :per_branch_daily_cap, class: "mt-1 w-full rounded border px-3 py-2" %>
+          </div>
+          <div>
+            <%= f.label :per_gem_daily_cap, class: "block font-medium" %>
+            <%= f.number_field :per_gem_daily_cap, class: "mt-1 w-full rounded border px-3 py-2" %>
+          </div>
+          <div>
+            <%= f.label :rejection_cooldown_hours, class: "block font-medium" %>
+            <%= f.number_field :rejection_cooldown_hours, class: "mt-1 w-full rounded border px-3 py-2" %>
+          </div>
+        </div>
+
+        <div class="pt-2 font-medium">GitHub</div>
+        <div class="grid grid-cols-1 gap-4">
+          <div>
+            <%= f.label :fork_repo, class: "block font-medium" %>
+            <%= f.text_field :fork_repo, class: "mt-1 w-full rounded border px-3 py-2 font-mono" %>
+          </div>
+          <div>
+            <%= f.label :upstream_repo, class: "block font-medium" %>
+            <%= f.text_field :upstream_repo, class: "mt-1 w-full rounded border px-3 py-2 font-mono" %>
+          </div>
+          <div>
+            <%= f.label :fork_git_url, class: "block font-medium" %>
+            <%= f.text_field :fork_git_url, class: "mt-1 w-full rounded border px-3 py-2 font-mono" %>
+          </div>
+        </div>
+
+        <div class="flex gap-3 pt-2">
+          <%= f.submit "Save", class: "rounded bg-black px-4 py-2 text-white" %>
+          <%= link_to "Cancel", admin_settings_path, class: "rounded border px-4 py-2" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

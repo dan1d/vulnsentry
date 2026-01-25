@@ -1,0 +1,23 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  candidate_bump: one
+  upstream_repo: MyString
+  pr_number: 1
+  pr_url: MyText
+  status: MyString
+  opened_at: 2026-01-25 19:52:02
+  merged_at: 2026-01-25 19:52:02
+  closed_at: 2026-01-25 19:52:02
+  last_synced_at: 2026-01-25 19:52:02
+
+two:
+  candidate_bump: two
+  upstream_repo: MyString
+  pr_number: 1
+  pr_url: MyText
+  status: MyString
+  opened_at: 2026-01-25 19:52:02
+  merged_at: 2026-01-25 19:52:02
+  closed_at: 2026-01-25 19:52:02
+  last_synced_at: 2026-01-25 19:52:02

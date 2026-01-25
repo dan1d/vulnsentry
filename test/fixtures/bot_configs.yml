@@ -1,0 +1,29 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  singleton: false
+  require_human_approval: false
+  emergency_stop: false
+  allow_draft_pr: false
+  global_daily_cap: 1
+  global_hourly_cap: 1
+  per_branch_daily_cap: 1
+  per_gem_daily_cap: 1
+  rejection_cooldown_hours: 1
+  fork_repo: MyString
+  upstream_repo: MyString
+  fork_git_url: MyString
+
+two:
+  singleton: false
+  require_human_approval: false
+  emergency_stop: false
+  allow_draft_pr: false
+  global_daily_cap: 1
+  global_hourly_cap: 1
+  per_branch_daily_cap: 1
+  per_gem_daily_cap: 1
+  rejection_cooldown_hours: 1
+  fork_repo: MyString
+  upstream_repo: MyString
+  fork_git_url: MyString

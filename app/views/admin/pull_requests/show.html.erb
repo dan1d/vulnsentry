@@ -1,0 +1,25 @@
+<%= render "admin/shared/nav" %>
+
+<div class="mx-auto max-w-4xl px-4 py-6 space-y-6">
+  <div class="flex items-start justify-between gap-6">
+    <div>
+      <h1 class="text-2xl font-semibold">PR <span class="font-mono">#<%= @pull_request.pr_number || "?" %></span></h1>
+      <div class="mt-1 text-sm text-gray-600 font-mono">
+        <%= @pull_request.candidate_bump.base_branch %>: <%= @pull_request.candidate_bump.gem_name %> → <%= @pull_request.candidate_bump.target_version %>
+      </div>
+      <div class="mt-1 text-sm text-gray-600">status: <span class="font-mono"><%= @pull_request.status %></span></div>
+    </div>
+    <div class="text-sm">
+      <%= link_to "Back", admin_pull_requests_path, class: "rounded border px-3 py-2" %>
+    </div>
+  </div>
+
+  <div class="rounded border bg-white p-4 space-y-2">
+    <div class="text-sm font-medium">Links</div>
+    <% if @pull_request.pr_url.present? %>
+      <div class="text-sm"><%= link_to @pull_request.pr_url, @pull_request.pr_url, class: "text-blue-600 hover:underline" %></div>
+    <% else %>
+      <div class="text-sm text-gray-600">(no URL recorded yet)</div>
+    <% end %>
+  </div>
+</div>

@@ -1,0 +1,114 @@
+# PostgreSQL.
+# Ensure the pg gem is defined in your Gemfile:
+#   gem "pg"
+#
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  variables:
+    statement_timeout: <%= ENV.fetch("PG_STATEMENT_TIMEOUT_MS", 5000) %>
+
+development:
+  primary:
+    <<: *default
+    database: <%= ENV.fetch("PRIMARY_DB_NAME", "automatic_patch_development") %>
+    host: <%= ENV.fetch("PGHOST", "127.0.0.1") %>
+    port: <%= ENV.fetch("PGPORT", 5432) %>
+    username: <%= ENV.fetch("PGUSER", "postgres") %>
+    password: <%= ENV.fetch("PGPASSWORD", "") %>
+  cache:
+    <<: *default
+    database: <%= ENV.fetch("CACHE_DB_NAME", "automatic_patch_development_cache") %>
+    migrations_paths: db/cache_migrate
+    host: <%= ENV.fetch("PGHOST", "127.0.0.1") %>
+    port: <%= ENV.fetch("PGPORT", 5432) %>
+    username: <%= ENV.fetch("PGUSER", "postgres") %>
+    password: <%= ENV.fetch("PGPASSWORD", "") %>
+  queue:
+    <<: *default
+    database: <%= ENV.fetch("QUEUE_DB_NAME", "automatic_patch_development_queue") %>
+    migrations_paths: db/queue_migrate
+    host: <%= ENV.fetch("PGHOST", "127.0.0.1") %>
+    port: <%= ENV.fetch("PGPORT", 5432) %>
+    username: <%= ENV.fetch("PGUSER", "postgres") %>
+    password: <%= ENV.fetch("PGPASSWORD", "") %>
+  cable:
+    <<: *default
+    database: <%= ENV.fetch("CABLE_DB_NAME", "automatic_patch_development_cable") %>
+    migrations_paths: db/cable_migrate
+    host: <%= ENV.fetch("PGHOST", "127.0.0.1") %>
+    port: <%= ENV.fetch("PGPORT", 5432) %>
+    username: <%= ENV.fetch("PGUSER", "postgres") %>
+    password: <%= ENV.fetch("PGPASSWORD", "") %>
+
+# Warning: The database defined as "test" will be erased and
+# re-generated from your development database when you run "rake".
+# Do not set this db to the same as development or production.
+test:
+  primary:
+    <<: *default
+    database: <%= ENV.fetch("PRIMARY_DB_NAME", "automatic_patch_test") %>
+    host: <%= ENV.fetch("PGHOST", "127.0.0.1") %>
+    port: <%= ENV.fetch("PGPORT", 5432) %>
+    username: <%= ENV.fetch("PGUSER", "postgres") %>
+    password: <%= ENV.fetch("PGPASSWORD", "") %>
+  cache:
+    <<: *default
+    database: <%= ENV.fetch("CACHE_DB_NAME", "automatic_patch_test_cache") %>
+    migrations_paths: db/cache_migrate
+    host: <%= ENV.fetch("PGHOST", "127.0.0.1") %>
+    port: <%= ENV.fetch("PGPORT", 5432) %>
+    username: <%= ENV.fetch("PGUSER", "postgres") %>
+    password: <%= ENV.fetch("PGPASSWORD", "") %>
+  queue:
+    <<: *default
+    database: <%= ENV.fetch("QUEUE_DB_NAME", "automatic_patch_test_queue") %>
+    migrations_paths: db/queue_migrate
+    host: <%= ENV.fetch("PGHOST", "127.0.0.1") %>
+    port: <%= ENV.fetch("PGPORT", 5432) %>
+    username: <%= ENV.fetch("PGUSER", "postgres") %>
+    password: <%= ENV.fetch("PGPASSWORD", "") %>
+  cable:
+    <<: *default
+    database: <%= ENV.fetch("CABLE_DB_NAME", "automatic_patch_test_cable") %>
+    migrations_paths: db/cable_migrate
+    host: <%= ENV.fetch("PGHOST", "127.0.0.1") %>
+    port: <%= ENV.fetch("PGPORT", 5432) %>
+    username: <%= ENV.fetch("PGUSER", "postgres") %>
+    password: <%= ENV.fetch("PGPASSWORD", "") %>
+
+# Store production database in the storage/ directory, which by default
+# is mounted as a persistent Docker volume in config/deploy.yml.
+production:
+  primary:
+    <<: *default
+    database: <%= ENV.fetch("PRIMARY_DB_NAME", "automatic_patch_production") %>
+    host: <%= ENV.fetch("PGHOST", "127.0.0.1") %>
+    port: <%= ENV.fetch("PGPORT", 5432) %>
+    username: <%= ENV.fetch("PGUSER", "postgres") %>
+    password: <%= ENV.fetch("PGPASSWORD", "") %>
+  cache:
+    <<: *default
+    database: <%= ENV.fetch("CACHE_DB_NAME", "automatic_patch_production_cache") %>
+    migrations_paths: db/cache_migrate
+    host: <%= ENV.fetch("PGHOST", "127.0.0.1") %>
+    port: <%= ENV.fetch("PGPORT", 5432) %>
+    username: <%= ENV.fetch("PGUSER", "postgres") %>
+    password: <%= ENV.fetch("PGPASSWORD", "") %>
+  queue:
+    <<: *default
+    database: <%= ENV.fetch("QUEUE_DB_NAME", "automatic_patch_production_queue") %>
+    migrations_paths: db/queue_migrate
+    host: <%= ENV.fetch("PGHOST", "127.0.0.1") %>
+    port: <%= ENV.fetch("PGPORT", 5432) %>
+    username: <%= ENV.fetch("PGUSER", "postgres") %>
+    password: <%= ENV.fetch("PGPASSWORD", "") %>
+  cable:
+    <<: *default
+    database: <%= ENV.fetch("CABLE_DB_NAME", "automatic_patch_production_cable") %>
+    migrations_paths: db/cable_migrate
+    host: <%= ENV.fetch("PGHOST", "127.0.0.1") %>
+    port: <%= ENV.fetch("PGPORT", 5432) %>
+    username: <%= ENV.fetch("PGUSER", "postgres") %>
+    password: <%= ENV.fetch("PGPASSWORD", "") %>
