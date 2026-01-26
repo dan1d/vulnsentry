@@ -1,0 +1,63 @@
+<%= render "admin/shared/nav" %>
+
+<div class="mx-auto max-w-6xl px-4 py-6 space-y-4">
+  <div>
+    <h1 class="text-2xl font-semibold">Advisories</h1>
+    <p class="text-sm text-gray-600">Browse ingested advisories (GHSA/OSV), enriched with ruby-lang when available.</p>
+  </div>
+
+  <div class="rounded border bg-white p-4">
+    <%= form_with url: admin_advisories_path, method: :get, local: true do %>
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-3 text-sm">
+        <div class="md:col-span-2">
+          <label class="block font-medium">Search</label>
+          <%= text_field_tag :q, params[:q], placeholder: "fingerprint, URL, CVE, gem...", class: "mt-1 w-full rounded border px-3 py-2" %>
+        </div>
+        <div>
+          <label class="block font-medium">Source</label>
+          <%= select_tag :source, options_for_select(Advisory::SOURCES, params[:source]), include_blank: true, class: "mt-1 w-full rounded border px-3 py-2" %>
+        </div>
+        <div>
+          <label class="block font-medium">Gem</label>
+          <%= text_field_tag :gem_name, params[:gem_name], class: "mt-1 w-full rounded border px-3 py-2" %>
+        </div>
+        <div class="flex items-end gap-2">
+          <%= submit_tag "Filter", class: "rounded bg-black px-4 py-2 text-white" %>
+          <%= link_to "Clear", admin_advisories_path, class: "rounded border px-4 py-2" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="rounded border bg-white overflow-hidden">
+    <table class="min-w-full text-sm">
+      <thead class="bg-gray-50 text-gray-700">
+        <tr>
+          <th class="px-4 py-2 text-left">Gem</th>
+          <th class="px-4 py-2 text-left">CVE</th>
+          <th class="px-4 py-2 text-left">Source</th>
+          <th class="px-4 py-2 text-left">Fingerprint</th>
+          <th class="px-4 py-2"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y">
+        <% @advisories.each do |a| %>
+          <tr>
+            <td class="px-4 py-2"><%= a.gem_name %></td>
+            <td class="px-4 py-2 font-mono"><%= a.cve.presence || "-" %></td>
+            <td class="px-4 py-2"><%= a.source %></td>
+            <td class="px-4 py-2 font-mono truncate max-w-[28rem]"><%= a.fingerprint %></td>
+            <td class="px-4 py-2 text-right">
+              <%= link_to "View", admin_advisory_path(a), class: "text-blue-600 hover:underline" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="flex justify-center">
+    <%== pagy_nav(@pagy) if @pagy %>
+  </div>
+</div>
+

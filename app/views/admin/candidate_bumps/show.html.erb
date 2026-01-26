@@ -25,10 +25,15 @@
     <div class="flex flex-wrap gap-3 items-center">
       <%= button_to "Approve", admin_candidate_bump_path(@candidate_bump), method: :patch, params: { event: "approve" }, class: "rounded bg-black px-4 py-2 text-white text-sm" %>
       <%= button_to "Reject", admin_candidate_bump_path(@candidate_bump), method: :patch, params: { event: "reject", reason: "rejected_by_admin" }, class: "rounded border px-4 py-2 text-sm" %>
+
+      <% if @candidate_bump.state == "approved" %>
+        <%= button_to "Create PR", admin_candidate_bump_path(@candidate_bump), method: :patch, params: { event: "create_pr" }, class: "rounded bg-[#CC342D] px-4 py-2 text-white text-sm hover:opacity-90" %>
+        <%= button_to "Create Draft PR", admin_candidate_bump_path(@candidate_bump), method: :patch, params: { event: "create_draft_pr" }, class: "rounded border border-[#CC342D] px-4 py-2 text-sm text-[#CC342D] hover:bg-[#CC342D]/10" %>
+      <% end %>
     </div>
 
     <p class="text-xs text-gray-600">
-      Approve is required before any PR creation job will run.
+      Two-click safety: Approve first, then Create PR (or Draft PR).
     </p>
   </div>
 </div>

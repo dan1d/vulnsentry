@@ -1,0 +1,37 @@
+<%= render "admin/shared/nav" %>
+
+<div class="mx-auto max-w-4xl px-4 py-6 space-y-6">
+  <div class="flex items-start justify-between gap-6">
+    <div>
+      <h1 class="text-2xl font-semibold">Advisory</h1>
+      <div class="mt-1 text-sm text-gray-600">
+        <span class="font-mono"><%= @advisory.fingerprint %></span>
+      </div>
+      <div class="mt-1 text-sm text-gray-600">
+        gem: <span class="font-mono"><%= @advisory.gem_name %></span>
+        · source: <span class="font-mono"><%= @advisory.source %></span>
+        · cve: <span class="font-mono"><%= @advisory.cve.presence || "-" %></span>
+      </div>
+    </div>
+    <div class="text-sm">
+      <%= link_to "Back", admin_advisories_path, class: "rounded border px-3 py-2" %>
+    </div>
+  </div>
+
+  <div class="rounded border bg-white p-4 space-y-2">
+    <div class="text-sm font-medium">Links</div>
+    <% if @advisory.advisory_url.present? %>
+      <div class="text-sm">
+        <%= link_to @advisory.advisory_url, @advisory.advisory_url, target: "_blank", rel: "noopener", class: "text-blue-600 hover:underline" %>
+      </div>
+    <% else %>
+      <div class="text-sm text-gray-600">(no advisory_url recorded)</div>
+    <% end %>
+  </div>
+
+  <div class="rounded border bg-white p-4 space-y-2">
+    <div class="text-sm font-medium">Raw payload</div>
+    <pre class="text-xs bg-gray-50 rounded p-3 overflow-auto"><%= JSON.pretty_generate(@advisory.raw || {}) %></pre>
+  </div>
+</div>
+

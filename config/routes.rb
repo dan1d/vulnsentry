@@ -1,11 +1,16 @@
 Rails.application.routes.draw do
   root "home#index"
 
+  get "/sign_in", to: "sessions#new"
+  post "/sign_in", to: "sessions#create"
+  delete "/logout", to: "sessions#destroy"
+
   namespace :admin do
     root to: "dashboard#index"
 
     resources :branch_targets, only: %i[index edit update]
     resources :candidate_bumps, only: %i[index show update]
+    resources :advisories, only: %i[index show]
     resources :pull_requests, only: %i[index show]
     resource :settings, only: %i[show edit update]
   end

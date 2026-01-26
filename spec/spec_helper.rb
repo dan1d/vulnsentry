@@ -92,6 +92,3 @@ RSpec.configure do |config|
   Kernel.srand config.seed
 =end
 end
-
-ENV["ADMIN_USER"] ||= "admin"
-ENV["ADMIN_PASSWORD"] ||= "password"

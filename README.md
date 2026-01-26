@@ -28,8 +28,9 @@ Run the dev server + Tailwind watcher:
 bin/dev
 ```
 
-Admin UI (Basic Auth) is under:
-- `GET /admin`
+Admin UI is under:
+- `GET /admin` (requires sign-in)
+- `GET /sign_in`
 
 ## Tests and lint
 
@@ -53,10 +54,12 @@ bin/jobs
 ## Environment variables
 
 ### Admin UI
-- **`ADMIN_USER`**: HTTP Basic username for `/admin`
-- **`ADMIN_PASSWORD`**: HTTP Basic password for `/admin`
+Admin auth is **session-based** (single operator). Create the user via console:
 
-If these aren’t set, the admin UI returns 404 (locked down by default).
+```bash
+bin/rails console
+AdminUser.create!(username: "dan1d", password: "change-me", password_confirmation: "change-me")
+```
 
 ### PostgreSQL
 This app uses multiple DBs (primary/cache/queue/cable) in `config/database.yml`.
@@ -97,8 +100,6 @@ Kamal reads secrets from `.kamal/secrets` (do not commit real tokens).
 Required:
 - `RAILS_MASTER_KEY`
 - `GH_TOKEN`
-- `ADMIN_USER`
-- `ADMIN_PASSWORD`
 - Postgres vars (`PGHOST`, `PGUSER`, `PGPASSWORD`, etc.)
 
 Optional:

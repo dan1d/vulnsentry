@@ -1,0 +1,32 @@
+<div class="mx-auto max-w-md w-full">
+  <div class="rounded-xl border bg-white p-6">
+    <h1 class="text-xl font-semibold text-gray-900">Sign in</h1>
+    <p class="mt-1 text-sm text-gray-600">
+      Admin access is restricted.
+    </p>
+
+    <% if flash[:alert].present? %>
+      <div class="mt-4 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+        <%= flash[:alert] %>
+      </div>
+    <% end %>
+
+    <%= form_with url: sign_in_path, method: :post, local: true, class: "mt-6 space-y-4" do %>
+      <div>
+        <label class="block text-sm font-medium text-gray-900">Username</label>
+        <%= text_field_tag :username, params[:username], autofocus: true, class: "mt-1 w-full rounded border px-3 py-2" %>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-900">Password</label>
+        <%= password_field_tag :password, nil, class: "mt-1 w-full rounded border px-3 py-2" %>
+      </div>
+
+      <div class="flex items-center justify-between">
+        <%= submit_tag "Sign in", class: "rounded bg-[#CC342D] px-4 py-2 text-sm text-white hover:opacity-90" %>
+        <%= link_to "Back", root_path, class: "text-sm text-gray-600 hover:underline" %>
+      </div>
+    <% end %>
+  </div>
+</div>
+

@@ -9,7 +9,12 @@
     </div>
 
     <nav class="flex items-center gap-3 text-sm">
-      <%= link_to "Admin", admin_root_path, class: "rounded px-3 py-2 text-gray-700 hover:bg-gray-100" %>
+      <% if admin_signed_in? %>
+        <%= link_to "Admin", admin_root_path, class: "rounded px-3 py-2 text-gray-700 hover:bg-gray-100" %>
+        <%= button_to "Logout", logout_path, method: :delete, class: "rounded px-3 py-2 text-gray-700 hover:bg-gray-100" %>
+      <% else %>
+        <%= link_to "Sign in", sign_in_path, class: "rounded px-3 py-2 text-gray-700 hover:bg-gray-100" %>
+      <% end %>
       <%= link_to "GitHub (dan1d)", "https://github.com/dan1d", target: "_blank", rel: "noopener", class: "rounded px-3 py-2 text-gray-700 hover:bg-gray-100" %>
       <%= link_to "ruby/ruby", "https://github.com/ruby/ruby", target: "_blank", rel: "noopener", class: "rounded px-3 py-2 text-gray-700 hover:bg-gray-100" %>
       <span class="inline-flex items-center rounded-full bg-[#CC342D]/10 px-3 py-1 text-xs font-medium text-[#CC342D]">
