@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "Running DB migrations for $KAMAL_SERVICE@$KAMAL_VERSION..."
+
+# Run migrations once before booting new app containers.
+# --skip-hooks avoids recursion (this file is itself a hook).
+bin/kamal --skip-hooks app exec 'bin/rails db:migrate'
+
