@@ -96,6 +96,10 @@ DeepSeek is **never authoritative**; outputs are validated and the system fails 
 
 This repo includes a Kamal config at `config/deploy.yml`.
 
+## Architecture / how it works
+
+See `docs/ARCHITECTURE.md` for the end-to-end behavior, data model, job pipeline, and deployment orchestration.
+
 ### 1) Configure servers and registry
 - Update `servers.web` in `config/deploy.yml` to your Droplet IP(s).
 - Configure an image registry (recommended: `ghcr.io` or Docker Hub) in `config/deploy.yml`.
