@@ -38,4 +38,3 @@ module Evaluation
       end
   end
 end
-

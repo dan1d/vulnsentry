@@ -1,6 +1,7 @@
 class Admin::PullRequestsController < Admin::BaseController
   def index
-    @pull_requests = PullRequest.order(created_at: :desc).limit(200)
+    query = AdminQueries::PullRequestsQuery.new.call(params)
+    @pagy, @pull_requests = pagy(query)
   end
 
   def show

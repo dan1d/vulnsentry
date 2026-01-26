@@ -1,6 +1,7 @@
 class Admin::CandidateBumpsController < Admin::BaseController
   def index
-    @candidate_bumps = CandidateBump.order(created_at: :desc).limit(200)
+    query = AdminQueries::CandidateBumpsQuery.new.call(params)
+    @pagy, @candidate_bumps = pagy(query)
   end
 
   def show
@@ -13,6 +14,7 @@ class Admin::CandidateBumpsController < Admin::BaseController
     case params[:event]
     when "approve"
       @candidate_bump.update!(state: "approved", approved_at: Time.current, approved_by: current_admin_user)
+      enqueue_pr_creation!(@candidate_bump)
       redirect_to admin_candidate_bump_path(@candidate_bump), notice: "Approved"
     when "reject"
       reason = params[:reason].presence || "rejected_by_admin"
@@ -26,5 +28,13 @@ class Admin::CandidateBumpsController < Admin::BaseController
   private
     def current_admin_user
       ENV.fetch("ADMIN_USER", "admin")
+    end
+
+    def enqueue_pr_creation!(candidate_bump)
+      config = BotConfig.instance
+      return if config.emergency_stop?
+      return unless config.require_human_approval?
+
+      CreatePullRequestJob.perform_later(candidate_bump.id, draft: config.allow_draft_pr?)
     end
 end

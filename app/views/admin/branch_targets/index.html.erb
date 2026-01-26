@@ -8,6 +8,25 @@
     </div>
   </div>
 
+  <div class="rounded border bg-white p-4">
+    <%= form_with url: admin_branch_targets_path, method: :get, local: true do %>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+        <div>
+          <label class="block font-medium">Enabled</label>
+          <%= select_tag :enabled, options_for_select([["true", "true"], ["false", "false"]], params[:enabled]), include_blank: true, class: "mt-1 w-full rounded border px-3 py-2" %>
+        </div>
+        <div>
+          <label class="block font-medium">Maintenance status</label>
+          <%= select_tag :maintenance_status, options_for_select(BranchTarget::MAINTENANCE_STATUSES, params[:maintenance_status]), include_blank: true, class: "mt-1 w-full rounded border px-3 py-2" %>
+        </div>
+        <div class="flex items-end gap-2">
+          <%= submit_tag "Filter", class: "rounded bg-black px-4 py-2 text-white" %>
+          <%= link_to "Clear", admin_branch_targets_path, class: "rounded border px-4 py-2" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
   <div class="rounded border bg-white overflow-hidden">
     <table class="min-w-full text-sm">
       <thead class="bg-gray-50 text-gray-700">
@@ -31,5 +50,9 @@
         <% end %>
       </tbody>
     </table>
+  </div>
+
+  <div class="flex justify-center">
+    <%== pagy_nav(@pagy) if @pagy %>
   </div>
 </div>

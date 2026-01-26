@@ -1,4 +1,6 @@
 class Admin::BaseController < ApplicationController
+  include PagyBackend
+
   before_action :http_basic_authenticate!
 
   private

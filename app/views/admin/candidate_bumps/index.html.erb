@@ -6,6 +6,29 @@
     <p class="text-sm text-gray-600">Review and approve before creating any PR.</p>
   </div>
 
+  <div class="rounded border bg-white p-4">
+    <%= form_with url: admin_candidate_bumps_path, method: :get, local: true do |f| %>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
+        <div>
+          <label class="block font-medium">State</label>
+          <%= select_tag :state, options_for_select(CandidateBump::STATES, params[:state]), include_blank: true, class: "mt-1 w-full rounded border px-3 py-2" %>
+        </div>
+        <div>
+          <label class="block font-medium">Branch</label>
+          <%= text_field_tag :base_branch, params[:base_branch], class: "mt-1 w-full rounded border px-3 py-2 font-mono" %>
+        </div>
+        <div>
+          <label class="block font-medium">Gem</label>
+          <%= text_field_tag :gem_name, params[:gem_name], class: "mt-1 w-full rounded border px-3 py-2" %>
+        </div>
+        <div class="flex items-end gap-2">
+          <%= submit_tag "Filter", class: "rounded bg-black px-4 py-2 text-white" %>
+          <%= link_to "Clear", admin_candidate_bumps_path, class: "rounded border px-4 py-2" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
   <div class="rounded border bg-white overflow-hidden">
     <table class="min-w-full text-sm">
       <thead class="bg-gray-50 text-gray-700">
@@ -31,5 +54,9 @@
         <% end %>
       </tbody>
     </table>
+  </div>
+
+  <div class="flex justify-center">
+    <%== pagy_nav(@pagy) if @pagy %>
   </div>
 </div>

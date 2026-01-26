@@ -1,6 +1,7 @@
 class Admin::BranchTargetsController < Admin::BaseController
   def index
-    @branch_targets = BranchTarget.order(name: :asc)
+    query = AdminQueries::BranchTargetsQuery.new.call(params)
+    @pagy, @branch_targets = pagy(query)
   end
 
   def edit

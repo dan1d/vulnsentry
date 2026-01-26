@@ -1,0 +1,43 @@
+class CreatePullRequestJob < ApplicationJob
+  queue_as :default
+
+  def perform(candidate_bump_id, draft: false)
+    config = BotConfig.instance
+    return if config.emergency_stop?
+
+    candidate = CandidateBump.find(candidate_bump_id)
+    return unless candidate.state == "approved"
+    return if candidate.pull_request.present?
+
+    creator = Github::RubyCorePrCreator.new
+    result = creator.create_for_candidate!(candidate, draft: draft)
+
+    PullRequest.create!(
+      candidate_bump: candidate,
+      upstream_repo: config.upstream_repo,
+      fork_repo: config.fork_repo,
+      head_branch: result[:head_branch],
+      pr_number: result.fetch(:number),
+      pr_url: result.fetch(:url),
+      status: "open",
+      opened_at: Time.current
+    )
+
+    candidate.update!(state: "submitted", created_pr_at: Time.current)
+  rescue StandardError => e
+    CandidateBump.where(id: candidate_bump_id).update_all(
+      state: "failed",
+      blocked_reason: e.class.name,
+      review_notes: e.message,
+      last_attempted_at: Time.current
+    )
+    SystemEvent.create!(
+      kind: "create_pr",
+      status: "failed",
+      message: e.message,
+      payload: { candidate_bump_id: candidate_bump_id, class: e.class.name },
+      occurred_at: Time.current
+    )
+    raise
+  end
+end

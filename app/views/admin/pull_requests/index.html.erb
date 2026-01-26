@@ -6,6 +6,29 @@
     <p class="text-sm text-gray-600">PRs created by this app (and tracked in DB).</p>
   </div>
 
+  <div class="rounded border bg-white p-4">
+    <%= form_with url: admin_pull_requests_path, method: :get, local: true do %>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
+        <div>
+          <label class="block font-medium">Status</label>
+          <%= select_tag :status, options_for_select(PullRequest::STATUSES, params[:status]), include_blank: true, class: "mt-1 w-full rounded border px-3 py-2" %>
+        </div>
+        <div>
+          <label class="block font-medium">Branch</label>
+          <%= text_field_tag :base_branch, params[:base_branch], class: "mt-1 w-full rounded border px-3 py-2 font-mono" %>
+        </div>
+        <div>
+          <label class="block font-medium">Upstream repo</label>
+          <%= text_field_tag :upstream_repo, params[:upstream_repo], class: "mt-1 w-full rounded border px-3 py-2 font-mono" %>
+        </div>
+        <div class="flex items-end gap-2">
+          <%= submit_tag "Filter", class: "rounded bg-black px-4 py-2 text-white" %>
+          <%= link_to "Clear", admin_pull_requests_path, class: "rounded border px-4 py-2" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
   <div class="rounded border bg-white overflow-hidden">
     <table class="min-w-full text-sm">
       <thead class="bg-gray-50 text-gray-700">
@@ -31,5 +54,9 @@
         <% end %>
       </tbody>
     </table>
+  </div>
+
+  <div class="flex justify-center">
+    <%== pagy_nav(@pagy) if @pagy %>
   </div>
 </div>

@@ -47,6 +47,8 @@ module RubyLang
         response = @http.get_response(uri)
         raise FetchError, "ruby-lang fetch failed: #{response.code}" unless response.is_a?(Net::HTTPSuccess)
         response.body
+      rescue Timeout::Error, SocketError, Errno::ECONNRESET, Errno::ETIMEDOUT => e
+        raise FetchError, "ruby-lang fetch error: #{e.class.name}"
       end
 
       def newer_version?(candidate, current)

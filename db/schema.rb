@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_25_231300) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_25_234000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -87,9 +87,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_25_231300) do
   end
 
   create_table "pull_requests", force: :cascade do |t|
+    t.datetime "branch_deleted_at"
     t.bigint "candidate_bump_id", null: false
     t.datetime "closed_at"
     t.datetime "created_at", null: false
+    t.string "fork_repo", default: "dan1d/ruby", null: false
+    t.string "head_branch"
     t.datetime "last_synced_at"
     t.datetime "merged_at"
     t.datetime "opened_at"
@@ -98,7 +101,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_25_231300) do
     t.string "status", default: "open", null: false
     t.datetime "updated_at", null: false
     t.string "upstream_repo", default: "ruby/ruby", null: false
+    t.index ["branch_deleted_at"], name: "index_pull_requests_on_branch_deleted_at"
     t.index ["candidate_bump_id"], name: "index_pull_requests_on_candidate_bump_id", unique: true
+    t.index ["fork_repo", "head_branch"], name: "index_pull_requests_on_fork_repo_and_head_branch"
     t.index ["upstream_repo", "pr_number"], name: "index_pull_requests_on_upstream_repo_and_pr_number", unique: true, where: "(pr_number IS NOT NULL)"
   end
 

@@ -26,6 +26,10 @@ production:
     class: EvaluateOsvVulnerabilitiesJob
     schedule: every day at 3am
 
+  cleanup_fork_branches:
+    class: CleanupForkBranchesJob
+    schedule: every hour at minute 25
+
 development:
   refresh_branch_targets:
     class: RefreshBranchTargetsJob
@@ -38,3 +42,7 @@ development:
   evaluate_osv_vulnerabilities:
     class: EvaluateOsvVulnerabilitiesJob
     schedule: every day at 3am
+
+  cleanup_fork_branches:
+    class: CleanupForkBranchesJob
+    schedule: every hour at minute 25
