@@ -5,15 +5,22 @@ if Rails.env.production?
   return
 end
 
-unless defined?(FactoryBot)
-  puts "FactoryBot is required for development seeds."
+begin
+  require "factory_bot_rails"
+  require "faker"
+rescue LoadError
+  puts "FactoryBot/Faker are required for development seeds."
   puts "Run with the development group enabled (default for local dev)."
   return
 end
 
 puts "Seeding development data..."
 
-FactoryBot.find_definitions
+if FactoryBot.respond_to?(:reload)
+  FactoryBot.reload
+else
+  FactoryBot.find_definitions
+end
 
 seed_user = ENV.fetch("SEED_ADMIN_USER", "dan1d")
 seed_password = ENV.fetch("SEED_ADMIN_PASSWORD", "password")
@@ -27,12 +34,13 @@ admin = FactoryBot.create(
 )
 puts "Created AdminUser: #{admin.username} (password from SEED_ADMIN_PASSWORD or default)."
 
-BotConfig.instance
+BotConfig.instance.update!(emergency_stop: true)
+puts "BotConfig.emergency_stop is ON (seed safety)."
 
-BranchTarget.delete_all
-Advisory.delete_all
-CandidateBump.delete_all
 PullRequest.delete_all
+CandidateBump.delete_all
+Advisory.delete_all
+BranchTarget.delete_all
 SystemEvent.delete_all
 
 master = FactoryBot.create(:branch_target, name: "master", maintenance_status: "normal", enabled: true)
@@ -66,6 +74,38 @@ advisory_uri = FactoryBot.create(
   fixed_version: "0.13.2",
   advisory_url: "https://osv.dev/"
 )
+
+# Extra advisories for pagination / filtering
+seed_gems = %w[
+  rexml
+  rake
+  uri
+  openssl
+  net-http
+  json
+  psych
+  webrick
+  logger
+  csv
+  date
+  stringio
+]
+sources = %w[ruby_lang ghsa osv]
+140.times do |i|
+  gem_name = seed_gems[i % seed_gems.length]
+  source = sources[i % sources.length]
+  cve = format("CVE-2026-%04d", 100 + i)
+  fixed = "1.#{(i % 9) + 1}.#{(i % 20) + 1}"
+
+  FactoryBot.create(
+    :advisory,
+    source: source,
+    gem_name: gem_name,
+    cve: cve,
+    fixed_version: fixed,
+    advisory_url: "https://example.test/#{source}/#{cve}"
+  )
+end
 
 FactoryBot.create(
   :candidate_bump,
@@ -137,6 +177,63 @@ SystemEvent.create!(
   message: "Development seed data loaded",
   occurred_at: Time.current
 )
+
+# More events for pagination
+60.times do |i|
+  SystemEvent.create!(
+    kind: "seed",
+    status: %w[ok warning failed][i % 3],
+    message: "Seed event ##{i + 1}",
+    occurred_at: (i + 1).minutes.ago
+  )
+end
+
+# More candidates + PRs for pagination (DB records only; no GitHub calls)
+advisories = Advisory.order(created_at: :desc).limit(80).to_a
+branches = BranchTarget.where(enabled: true).to_a
+states = %w[
+  pending
+  blocked_rate_limited
+  blocked_ambiguous
+  ready_for_review
+  approved
+  rejected
+  submitted
+  failed
+]
+
+120.times do |i|
+  advisory = advisories[i % advisories.length]
+  branch = branches[i % branches.length]
+  state = states[i % states.length]
+
+  bump = FactoryBot.create(
+    :candidate_bump,
+    advisory: advisory,
+    branch_target: branch,
+    base_branch: branch.name,
+    current_version: "1.0.#{i % 5}",
+    target_version: "1.0.#{(i % 5) + 1}",
+    state: state,
+    approved_at: (state == "approved" ? Time.current : nil),
+    approved_by: (state == "approved" ? admin.username : nil),
+    blocked_reason: (state.start_with?("blocked") ? "seeded_#{state}" : nil),
+    proposed_diff: "- #{advisory.gem_name} (1.0.#{i % 5})\n+ #{advisory.gem_name} (1.0.#{(i % 5) + 1})\n"
+  )
+
+  pr_status = %w[open closed merged][i % 3]
+  FactoryBot.create(
+    :pull_request,
+    candidate_bump: bump,
+    status: pr_status,
+    pr_number: 20_000 + i,
+    pr_url: "https://github.com/ruby/ruby/pull/#{20_000 + i}",
+    opened_at: 10.days.ago,
+    closed_at: (pr_status == "closed" ? 5.days.ago : nil),
+    merged_at: (pr_status == "merged" ? 4.days.ago : nil),
+    head_branch: "bump-#{bump.gem_name}-#{bump.target_version}-#{branch.name}"
+  )
+end
 
 SystemEvent.create!(
   kind: "evaluation",
