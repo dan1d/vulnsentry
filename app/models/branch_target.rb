@@ -1,5 +1,5 @@
 class BranchTarget < ApplicationRecord
-  MAINTENANCE_STATUSES = %w[normal security].freeze
+  MAINTENANCE_STATUSES = %w[normal security eol].freeze
 
   has_many :candidate_bumps, dependent: :destroy
 

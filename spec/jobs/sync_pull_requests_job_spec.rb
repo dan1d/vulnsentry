@@ -14,9 +14,19 @@ RSpec.describe SyncPullRequestsJob, type: :job do
       closed_at: "2026-01-25T11:00:00Z"
     )
 
+    comments_fetcher = instance_double(Github::PullRequestCommentsFetcher)
+    allow(Github::PullRequestCommentsFetcher).to receive(:new).and_return(comments_fetcher)
+    allow(comments_fetcher).to receive(:fetch).and_return(
+      issue_comments: [],
+      reviews: [],
+      review_comments: []
+    )
+
     described_class.perform_now
 
     expect(pr.reload.status).to eq("closed")
     expect(pr.last_synced_at).to be_present
+    expect(pr.comments_last_synced_at).to be_present
+    expect(pr.comments_snapshot.fetch("issue_comments")).to eq([])
   end
 end

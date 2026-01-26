@@ -4,13 +4,14 @@ class RefreshBranchTargetsJob < ApplicationJob
   def perform
     fetcher = RubyLang::MaintenanceBranches.new
     html = fetcher.fetch_html
-    supported = fetcher.parse_supported_html(html)
+    all_branches = fetcher.parse_all_html(html)
+    supported = all_branches.reject { |b| b.status == "eol" }
 
-    cross_check_and_upsert!(html: html, supported: supported)
+    cross_check_and_upsert!(html: html, supported: supported, all_branches: all_branches)
   end
 
   private
-    def cross_check_and_upsert!(html:, supported:)
+    def cross_check_and_upsert!(html:, supported:, all_branches:)
       cross = Ai::MaintenanceBranchesCrossCheck.new
 
       if cross.enabled?
@@ -19,7 +20,7 @@ class RefreshBranchTargetsJob < ApplicationJob
       end
 
       ActiveRecord::Base.transaction do
-        upsert_supported(supported)
+        upsert_branches(all_branches)
         ensure_master!
       end
 
@@ -36,7 +37,7 @@ class RefreshBranchTargetsJob < ApplicationJob
       raise
     end
 
-    def upsert_supported(branches)
+    def upsert_branches(branches)
       source_url = RubyLang::MaintenanceBranches::URL
       now = Time.current
 
@@ -47,7 +48,7 @@ class RefreshBranchTargetsJob < ApplicationJob
         row.source_url = source_url
         row.last_seen_at = now
         row.last_checked_at = now
-        row.enabled = true if row.new_record? && row.enabled.nil?
+        row.enabled = branch.status != "eol"
         row.save!
       end
     end

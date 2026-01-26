@@ -27,6 +27,12 @@ module RubyLang
     end
 
     def parse_supported_html(html)
+      parse_all_html(html).reject { |b| b.status == "eol" }
+    end
+
+    # Returns array of Branch including EOL branches.
+    # status is one of: "normal", "security", "eol"
+    def parse_all_html(html)
       doc = Nokogiri::HTML(html)
 
       branches = []
@@ -44,7 +50,7 @@ module RubyLang
       branches = branches.uniq { |b| b.series }
       sanity_check!(branches)
 
-      branches.reject { |b| b.status == "eol" }
+      branches
     end
 
     private
