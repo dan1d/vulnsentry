@@ -6,7 +6,7 @@ default: &default
   adapter: postgresql
   encoding: unicode
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
-  sslmode: <%= ENV["PGSSLMODE"] %>
+  sslmode: <%= ENV.fetch("PGSSLMODE", "prefer") %>
   variables:
     statement_timeout: <%= ENV.fetch("PG_STATEMENT_TIMEOUT_MS", 5000) %>
 

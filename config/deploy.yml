@@ -44,7 +44,6 @@ env:
     - GH_TOKEN
     - PGHOST
     - PGPORT
-    - PGSSLMODE
     - PGUSER
     - PGPASSWORD
     - PRIMARY_DB_NAME
@@ -59,6 +58,9 @@ env:
 
     # Hostname used by Rails (mailer URLs, allowed hosts, etc.).
     APP_HOST: vulnsentry.com
+
+    # DigitalOcean Managed Postgres requires SSL.
+    PGSSLMODE: require
 
     # Ensure git pushes to GitHub work inside the container.
     # - Use a temporary known_hosts file (container filesystem is ephemeral).
