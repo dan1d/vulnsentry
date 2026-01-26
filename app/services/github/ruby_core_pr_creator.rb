@@ -1,4 +1,3 @@
-require "fileutils"
 require "open3"
 require "tmpdir"
 
@@ -19,13 +18,15 @@ module Github
       branch_name = branch_name_for(candidate)
 
       Dir.mktmpdir("ruby-core-pr-") do |dir|
-        clone_upstream!(dir, base_branch)
-        configure_git_identity!(dir)
-        create_branch!(dir, branch_name)
+        repo_dir = File.join(dir, "repo")
+        clone_upstream!(dir, repo_dir, base_branch)
+        configure_git_identity!(repo_dir)
+        create_branch!(repo_dir, branch_name)
 
-        apply_one_line_bump!(dir, candidate)
-        commit!(dir, commit_message_for(candidate))
-        push_to_fork!(dir, branch_name)
+        apply_one_line_bump!(repo_dir, candidate)
+        commit!(repo_dir, commit_message_for(candidate))
+        branch_name = ensure_unique_head_branch!(repo_dir, branch_name)
+        push_to_fork!(repo_dir, branch_name)
 
         pr = ensure_pr!(branch_name, base_branch, candidate, draft: draft)
         { number: pr.fetch("number"), url: pr.fetch("url"), head_branch: branch_name }
@@ -33,50 +34,104 @@ module Github
     end
 
     private
-      def clone_upstream!(dir, base_branch)
-        run_git!("clone", "--depth", "1", "--branch", base_branch, upstream_https_url, dir: dir)
-        within_repo(dir) { run_git!("remote", "add", "fork", fork_https_url) }
+      def clone_upstream!(work_dir, repo_dir, base_branch)
+        run_git!(
+          "clone",
+          "--depth",
+          "1",
+          "--branch",
+          base_branch,
+          upstream_https_url,
+          repo_dir,
+          dir: work_dir
+        )
+        within_repo(repo_dir) { run_git!("remote", "add", "fork", fork_git_url) }
       end
 
-      def configure_git_identity!(dir)
-        within_repo(dir) do
+      def configure_git_identity!(repo_dir)
+        within_repo(repo_dir) do
           run_git!("config", "user.name", "dan1d")
           run_git!("config", "user.email", "dan1d@users.noreply.github.com")
         end
       end
 
-      def create_branch!(dir, branch_name)
-        within_repo(dir) { run_git!("checkout", "-b", branch_name) }
+      def create_branch!(repo_dir, branch_name)
+        within_repo(repo_dir) { run_git!("checkout", "-b", branch_name) }
       end
 
-      def apply_one_line_bump!(dir, candidate)
-        path = File.join(dir, "gems", "bundled_gems")
+      def apply_one_line_bump!(repo_dir, candidate)
+        path = File.join(repo_dir, "gems", "bundled_gems")
         old_content = File.read(path)
 
-        result = RubyCore::BundledGemsBumper.bump!(
-          old_content: old_content,
-          gem_name: candidate.gem_name,
-          target_version: candidate.target_version
-        )
+        result =
+          begin
+            RubyCore::BundledGemsBumper.bump!(
+              old_content: old_content,
+              gem_name: candidate.gem_name,
+              target_version: candidate.target_version
+            )
+          rescue RubyCore::BundledGemsFile::ParseError => e
+            assistant = Ai::BundledGemsBumpAssistant.new
+            raise Error, e.message unless assistant.enabled?
+
+            assistant.suggest_bump!(
+              old_content: old_content,
+              gem_name: candidate.gem_name,
+              target_version: candidate.target_version
+            )
+          end
+
+        expected = candidate.proposed_diff.to_s.strip
+        actual = "-#{result.fetch(:old_line).rstrip}\n+#{result.fetch(:new_line).rstrip}"
+        unless expected.blank? || expected == actual
+          raise Error, "proposed diff mismatch (refuse to proceed)"
+        end
 
         File.write(path, result.fetch(:new_content))
 
-        within_repo(dir) do
+        within_repo(repo_dir) do
           diff = run_git!("diff", "--name-only").strip
           raise Error, "unexpected diff files: #{diff.inspect}" unless diff == "gems/bundled_gems"
         end
       end
 
-      def commit!(dir, message)
-        within_repo(dir) do
+      def commit!(repo_dir, message)
+        within_repo(repo_dir) do
           run_git!("add", "gems/bundled_gems")
           run_git!("commit", "-m", message)
         end
       end
 
-      def push_to_fork!(dir, branch_name)
-        within_repo(dir) do
-          run_git!("push", "fork", "HEAD:refs/heads/#{branch_name}")
+      def ensure_unique_head_branch!(repo_dir, branch_name)
+        return branch_name unless remote_branch_exists?(repo_dir, branch_name)
+
+        # If the branch already exists, check whether there's already a PR for it.
+        existing = pr_view(@config.upstream_repo, "#{fork_owner}:#{branch_name}")
+        return branch_name if existing
+
+        # Avoid force-push: create a new branch name and use it for a new PR.
+        2.upto(10) do |n|
+          alt = "#{branch_name}-#{n}"
+          next if remote_branch_exists?(repo_dir, alt)
+
+          existing_alt = pr_view(@config.upstream_repo, "#{fork_owner}:#{alt}")
+          return alt if existing_alt
+
+          within_repo(repo_dir) { run_git!("branch", "-m", alt) }
+          return alt
+        end
+
+        raise Error, "unable to find unique branch name"
+      end
+
+      def push_to_fork!(repo_dir, branch_name)
+        within_repo(repo_dir) do
+          run_git!(
+            "push",
+            "fork",
+            "HEAD:refs/heads/#{branch_name}",
+            env: git_env
+          )
         end
       end
 
@@ -144,25 +199,42 @@ module Github
         "https://github.com/#{@config.upstream_repo}.git"
       end
 
-      def fork_https_url
-        # Prefer config if user set HTTPS; if SSH is configured, still keep it
-        # (user can provision SSH keys in the runtime image).
-        url = @config.fork_git_url
-        return url if url.to_s.start_with?("http")
-        "https://github.com/#{@config.fork_repo}.git"
+      def fork_git_url
+        @config.fork_git_url.presence || "git@github.com:#{@config.fork_repo}.git"
       end
 
       def fork_owner
         @config.fork_repo.split("/", 2).first
       end
 
-      def within_repo(dir)
-        Dir.chdir(dir) { yield }
+      def git_env
+        env = { "GIT_TERMINAL_PROMPT" => "0" }
+        env["GIT_SSH_COMMAND"] = ENV["GIT_SSH_COMMAND"] if ENV["GIT_SSH_COMMAND"].present?
+        env
       end
 
-      def run_git!(*args, dir: nil)
+      def remote_branch_exists?(repo_dir, branch_name)
+        within_repo(repo_dir) do
+          out = run_git!(
+            "ls-remote",
+            "--heads",
+            "fork",
+            "refs/heads/#{branch_name}",
+            env: git_env
+          )
+          out.present?
+        end
+      rescue Error
+        false
+      end
+
+      def within_repo(repo_dir)
+        Dir.chdir(repo_dir) { yield }
+      end
+
+      def run_git!(*args, dir: nil, env: nil)
         cmd = [ "git", *args ]
-        stdout, stderr, status = Open3.capture3(*cmd, chdir: dir)
+        stdout, stderr, status = Open3.capture3(env || {}, *cmd, chdir: dir)
         return stdout if status.success?
         raise Error, "git failed: #{cmd.join(' ')}: #{stderr.strip}"
       end

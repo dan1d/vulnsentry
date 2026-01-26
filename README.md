@@ -77,7 +77,13 @@ Used for GHSA ingestion (`gh api graphql`) and PR sync (`gh api`).
 
 Notes:
 - The token must correspond to **`dan1d`** if you want PRs authored by `dan1d`.
-- For PR creation later, the token needs permissions to push to `dan1d/ruby` and open PRs to `ruby/ruby`.
+- For PR creation, the token must be able to open PRs to `ruby/ruby` (and read the fork branch).
+
+### Git (SSH for pushing fork branches)
+PR creation pushes a head branch to the fork via **SSH** (e.g. `git@github.com:dan1d/ruby.git`).
+
+- Ensure the runtime has an SSH key that can push to `dan1d/ruby`.
+- Optional: **`GIT_SSH_COMMAND`** to force a specific key / host key policy.
 
 ### DeepSeek (optional, best-practice cross-check)
 - **`DEEPSEEK_API_KEY`**: enables DeepSeek features when set
