@@ -42,14 +42,7 @@ env:
   secret:
     - RAILS_MASTER_KEY
     - GH_TOKEN
-    - PGHOST
-    - PGPORT
-    - PGUSER
     - PGPASSWORD
-    - PRIMARY_DB_NAME
-    - CACHE_DB_NAME
-    - QUEUE_DB_NAME
-    - CABLE_DB_NAME
     - DEEPSEEK_API_KEY
   clear:
     # Run the Solid Queue Supervisor inside the web server's Puma process to do jobs.
@@ -61,6 +54,18 @@ env:
 
     # DigitalOcean Managed Postgres requires SSL.
     PGSSLMODE: require
+
+    # DigitalOcean Managed Postgres connection details (non-secret).
+    PGHOST: dbaas-db-9428295-do-user-32505526-0.k.db.ondigitalocean.com
+    PGPORT: 25060
+    PGUSER: doadmin
+
+    # For now, run all Rails DB roles in the single DO database.
+    # (You can later create 4 DBs in DO and update these to distinct names.)
+    PRIMARY_DB_NAME: defaultdb
+    CACHE_DB_NAME: defaultdb
+    QUEUE_DB_NAME: defaultdb
+    CABLE_DB_NAME: defaultdb
 
     # Ensure git pushes to GitHub work inside the container.
     # - Use a temporary known_hosts file (container filesystem is ephemeral).
