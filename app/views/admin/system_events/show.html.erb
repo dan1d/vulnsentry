@@ -1,0 +1,35 @@
+<%= render "admin/shared/nav" %>
+
+<div class="mx-auto max-w-6xl px-4 py-6 space-y-4">
+  <div class="flex items-start justify-between gap-6">
+    <div>
+      <div class="text-sm text-gray-500"><%= link_to "System events", admin_system_events_path, class: "hover:underline" %></div>
+      <h1 class="text-2xl font-semibold">
+        <span class="font-mono"><%= @event.kind %></span>
+        <span class="ml-2 inline-flex items-center rounded px-2 py-1 text-xs <%= @event.status == "ok" ? "bg-green-100 text-green-800" : (@event.status == "warning" ? "bg-yellow-100 text-yellow-800" : "bg-red-100 text-red-800") %>"><%= @event.status %></span>
+      </h1>
+      <div class="mt-1 text-sm text-gray-600"><%= @event.occurred_at.strftime("%Y-%m-%d %H:%M:%S %Z") %></div>
+    </div>
+  </div>
+
+  <% if @event.message.present? %>
+    <div class="rounded border bg-white p-4">
+      <div class="text-sm font-medium">Message</div>
+      <div class="mt-2 text-sm text-gray-800 whitespace-pre-wrap"><%= @event.message %></div>
+    </div>
+  <% end %>
+
+  <div class="rounded border bg-white p-4">
+    <div class="text-sm font-medium">Payload</div>
+    <pre class="mt-2 overflow-auto rounded bg-gray-50 p-3 text-xs"><%= JSON.pretty_generate(@event.payload || {}) %></pre>
+  </div>
+
+  <% backtrace = @event.payload.dig("exception", "backtrace") || @event.payload.dig(:exception, :backtrace) %>
+  <% if backtrace.present? %>
+    <div class="rounded border bg-white p-4">
+      <div class="text-sm font-medium">Stack trace</div>
+      <pre class="mt-2 overflow-auto rounded bg-gray-50 p-3 text-xs"><%= Array(backtrace).join("\n") %></pre>
+    </div>
+  <% end %>
+</div>
+

@@ -1,6 +1,19 @@
 require "rails_helper"
 
 RSpec.describe Github::RubyCorePrCreator do
+  it "does not raise TypeError when running git without chdir" do
+    gh = instance_double(Github::GhCli)
+    creator = described_class.new(gh: gh, config: BotConfig.instance)
+
+    # If git isn't available in the environment, creator will raise Github::RubyCorePrCreator::Error,
+    # but it should never raise TypeError from passing nil to Open3 chdir.
+    begin
+      creator.send(:run_git!, "--version")
+    rescue Github::RubyCorePrCreator::Error
+      # ok
+    end
+  end
+
   it "refuses when candidate is not approved" do
     candidate = build_stubbed(:candidate_bump, state: "ready_for_review")
     creator = described_class.new(gh: instance_double(Github::GhCli), config: BotConfig.instance)

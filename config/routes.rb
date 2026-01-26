@@ -12,6 +12,7 @@ Rails.application.routes.draw do
     resources :candidate_bumps, only: %i[index show update]
     resources :advisories, only: %i[index show]
     resources :pull_requests, only: %i[index show]
+    resources :system_events, only: %i[index show]
     resource :settings, only: %i[show edit update]
   end
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html

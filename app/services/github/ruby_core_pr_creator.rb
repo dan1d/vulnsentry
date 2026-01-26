@@ -234,7 +234,9 @@ module Github
 
       def run_git!(*args, dir: nil, env: nil)
         cmd = [ "git", *args ]
-        stdout, stderr, status = Open3.capture3(env || {}, *cmd, chdir: dir)
+        opts = {}
+        opts[:chdir] = dir if dir.present?
+        stdout, stderr, status = Open3.capture3(env || {}, *cmd, **opts)
         return stdout if status.success?
         raise Error, "git failed: #{cmd.join(' ')}: #{stderr.strip}"
       end

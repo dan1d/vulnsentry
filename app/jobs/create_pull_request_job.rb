@@ -40,7 +40,10 @@ class CreatePullRequestJob < ApplicationJob
       kind: "create_pr",
       status: "failed",
       message: e.message,
-      payload: { candidate_bump_id: candidate_bump_id, class: e.class.name },
+      payload: {
+        candidate_bump_id: candidate_bump_id,
+        exception: { class: e.class.name, message: e.message, backtrace: e.backtrace }
+      },
       occurred_at: Time.current
     )
     raise

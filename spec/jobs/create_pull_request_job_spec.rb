@@ -29,6 +29,35 @@ RSpec.describe CreatePullRequestJob, type: :job do
     expect(candidate.reload.state).to eq("submitted")
   end
 
+  it "persists exception backtrace in SystemEvent when PR creation fails" do
+    BotConfig.delete_all
+    create(:bot_config, emergency_stop: false)
+
+    branch = create(:branch_target, name: "master", enabled: true, maintenance_status: "normal")
+    advisory = create(:advisory, source: "osv", fingerprint: "osv:OSV-PR-2", gem_name: "rexml")
+    candidate = create(
+      :candidate_bump,
+      advisory: advisory,
+      branch_target: branch,
+      base_branch: "master",
+      gem_name: "rexml",
+      current_version: "3.4.4",
+      target_version: "3.4.5",
+      state: "approved"
+    )
+
+    creator = instance_double(Github::RubyCorePrCreator)
+    allow(Github::RubyCorePrCreator).to receive(:new).and_return(creator)
+    allow(creator).to receive(:create_for_candidate!).and_raise(TypeError, "no implicit conversion of nil into String")
+
+    expect { described_class.perform_now(candidate.id, draft: false) }.to raise_error(TypeError)
+
+    ev = SystemEvent.order(occurred_at: :desc).first
+    expect(ev).to have_attributes(kind: "create_pr", status: "failed")
+    expect(ev.payload.dig("exception", "class")).to eq("TypeError")
+    expect(ev.payload.dig("exception", "backtrace")).to be_present
+  end
+
   it "does nothing when emergency_stop is enabled" do
     BotConfig.delete_all
     create(:bot_config, emergency_stop: true)
