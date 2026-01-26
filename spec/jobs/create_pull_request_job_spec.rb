@@ -58,6 +58,47 @@ RSpec.describe CreatePullRequestJob, type: :job do
     expect(ev.payload.dig("exception", "backtrace")).to be_present
   end
 
+  it "persists gh stderr/stdout/cmd when gh command fails" do
+    BotConfig.delete_all
+    create(:bot_config, emergency_stop: false)
+
+    branch = create(:branch_target, name: "master", enabled: true, maintenance_status: "normal")
+    advisory = create(:advisory, source: "osv", fingerprint: "osv:OSV-PR-3", gem_name: "rexml")
+    candidate = create(
+      :candidate_bump,
+      advisory: advisory,
+      branch_target: branch,
+      base_branch: "master",
+      gem_name: "rexml",
+      current_version: "3.4.4",
+      target_version: "3.4.5",
+      state: "approved"
+    )
+
+    status = instance_double(Process::Status, exitstatus: 1)
+    cmd_error =
+      Github::GhCli::CommandError.new(
+        "gh command failed",
+        cmd: %w[gh pr create --repo ruby/ruby],
+        stdout: "",
+        stderr: "authentication required",
+        status: status
+      )
+
+    creator = instance_double(Github::RubyCorePrCreator)
+    allow(Github::RubyCorePrCreator).to receive(:new).and_return(creator)
+    allow(creator).to receive(:create_for_candidate!).and_raise(cmd_error)
+
+    expect { described_class.perform_now(candidate.id, draft: false) }.to raise_error(Github::GhCli::CommandError)
+
+    ev = SystemEvent.order(occurred_at: :desc).first
+    ex = ev.payload["exception"]
+    expect(ex["class"]).to eq("Github::GhCli::CommandError")
+    expect(ex["cmd"]).to be_present
+    expect(ex["stderr"]).to eq("authentication required")
+    expect(ex["exitstatus"]).to eq(1)
+  end
+
   it "does nothing when emergency_stop is enabled" do
     BotConfig.delete_all
     create(:bot_config, emergency_stop: true)

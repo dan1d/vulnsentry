@@ -36,13 +36,22 @@ class CreatePullRequestJob < ApplicationJob
       review_notes: e.message,
       last_attempted_at: Time.current
     )
+
+    exception_payload = { class: e.class.name, message: e.message, backtrace: e.backtrace }
+    if e.is_a?(Github::GhCli::CommandError)
+      exception_payload[:cmd] = e.cmd
+      exception_payload[:stdout] = e.stdout
+      exception_payload[:stderr] = e.stderr
+      exception_payload[:exitstatus] = e.status&.exitstatus
+    end
+
     SystemEvent.create!(
       kind: "create_pr",
       status: "failed",
       message: e.message,
       payload: {
         candidate_bump_id: candidate_bump_id,
-        exception: { class: e.class.name, message: e.message, backtrace: e.backtrace }
+        exception: exception_payload
       },
       occurred_at: Time.current
     )

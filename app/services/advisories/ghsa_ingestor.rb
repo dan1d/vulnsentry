@@ -8,7 +8,25 @@ module Advisories
     # Returns array of Advisory for GHSA vulns affecting gem@version.
     def ingest_for_version(gem_name:, version:)
       vulns = @ghsa.vulnerabilities_for_rubygem(gem_name: gem_name)
-      applicable = vulns.select { |v| Ghsa::Vulnerability.affected?(v.fetch("vulnerableVersionRange"), version) }
+      applicable =
+        vulns.select do |v|
+          Ghsa::Vulnerability.affected?(v.fetch("vulnerableVersionRange"), version)
+        rescue Ghsa::Vulnerability::ParseError => e
+          SystemEvent.create!(
+            kind: "ghsa_ingest",
+            status: "warning",
+            message: e.message,
+            payload: {
+              gem_name: gem_name,
+              version: version,
+              ghsa_id: v["ghsaId"],
+              vulnerable_version_range: v["vulnerableVersionRange"],
+              class: e.class.name
+            },
+            occurred_at: Time.current
+          )
+          false
+        end
 
       applicable.map do |v|
         ghsa_id = v.fetch("ghsaId")

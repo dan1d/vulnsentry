@@ -154,7 +154,10 @@ module Github
       end
 
       def pr_view(upstream, head)
-        @gh.json!("pr", "view", "--repo", upstream, "--head", head, "--json", "number,url,state")
+        # `gh pr view` does not support `--head` in all versions; use `gh pr list` instead.
+        prs = @gh.json!("pr", "list", "--repo", upstream, "--head", head, "--json", "number,url,state", "--limit", "1")
+        return nil unless prs.is_a?(Array)
+        prs.first
       rescue Github::GhCli::CommandError
         nil
       end
