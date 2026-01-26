@@ -9,11 +9,19 @@ class SyncPullRequestsJob < ApplicationJob
       begin
         sync_one(status_fetcher, comments_fetcher, pr)
       rescue StandardError => e
+        payload = { pr_id: pr.id, pr_number: pr.pr_number, upstream_repo: pr.upstream_repo, class: e.class.name }
+        if e.is_a?(Github::GhCli::CommandError)
+          payload[:cmd] = e.cmd
+          payload[:stdout] = e.stdout
+          payload[:stderr] = e.stderr
+          payload[:exitstatus] = e.status&.exitstatus
+        end
+
         SystemEvent.create!(
           kind: "sync_pull_requests",
           status: "warning",
           message: e.message,
-          payload: { pr_id: pr.id, pr_number: pr.pr_number, upstream_repo: pr.upstream_repo, class: e.class.name },
+          payload: payload,
           occurred_at: Time.current
         )
       end

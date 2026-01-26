@@ -20,23 +20,33 @@ module Github
     end
 
     def run!(*args)
-      cmd = [ "gh", *args.map(&:to_s) ]
-      stdout, stderr, status = Open3.capture3(@env, *cmd)
+      stdout, stderr, status, cmd = capture!(*args)
       return stdout if status.success?
 
       raise CommandError.new("gh command failed", cmd: cmd, stdout: stdout, stderr: stderr, status: status)
     rescue Errno::ENOENT => e
-      raise CommandError.new(
-        "gh executable not found: #{e.message}",
-        cmd: cmd,
-        stdout: "",
-        stderr: e.message,
-        status: nil
-      )
+      cmd = [ "gh", *args.map(&:to_s) ]
+      raise CommandError.new("gh executable not found: #{e.message}", cmd: cmd, stdout: "", stderr: e.message, status: nil)
     end
 
     def json!(*args)
-      JSON.parse(run!(*args))
+      stdout, stderr, status, cmd = capture!(*args)
+      unless status.success?
+        raise CommandError.new("gh command failed", cmd: cmd, stdout: stdout, stderr: stderr, status: status)
+      end
+
+      begin
+        JSON.parse(stdout)
+      rescue JSON::ParserError => e
+        raise CommandError.new("gh returned invalid JSON: #{e.message}", cmd: cmd, stdout: stdout, stderr: stderr, status: status)
+      end
     end
+
+    private
+      def capture!(*args)
+        cmd = [ "gh", *args.map(&:to_s) ]
+        stdout, stderr, status = Open3.capture3(@env, *cmd)
+        [ stdout, stderr, status, cmd ]
+      end
   end
 end
