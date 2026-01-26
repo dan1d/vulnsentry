@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Ensure secrets from local .env are available when hooks run.
+# Kamal hooks don't always inherit your interactive shell environment.
+if [ -f ./.env ]; then
+  set -a
+  # shellcheck disable=SC1091
+  source ./.env
+  set +a
+fi
+
 echo "Running DB migrations for $KAMAL_SERVICE@$KAMAL_VERSION..."
 
 # Run migrations once before booting new app containers.
