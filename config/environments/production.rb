@@ -31,7 +31,7 @@ Rails.application.configure do
   config.force_ssl = true
 
   # Skip http-to-https redirect for the default health check endpoint.
-  # config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
+  config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
 
   # Log to STDOUT with the current request id as a default log tag.
   config.log_tags = [ :request_id ]
@@ -85,6 +85,9 @@ Rails.application.configure do
   #   /.*\.example\.com/ # Allow requests from subdomains like `www.example.com`
   # ]
   config.hosts << ENV.fetch("APP_HOST", "vulnsentry.com")
+  # Allow Kamal proxy health checks, which use the container target host header
+  # like "ac11502b9054:80" (12-hex container id plus optional port).
+  config.hosts << /\A[a-f0-9]{12}(:\d+)?\z/
   #
   # Skip DNS rebinding protection for the default health check endpoint.
   config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
