@@ -1,4 +1,4 @@
-# AutomaticPatch — Ruby bundled gem CVE auto-PR bot
+# VulnSentry — Ruby bundled gem CVE auto-PR bot
 
 Rails 8 app that detects vulnerabilities affecting Ruby default/bundled gems
 (`ruby/ruby:gems/bundled_gems`) and prepares **human-reviewable** bump candidates.
