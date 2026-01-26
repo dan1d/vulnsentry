@@ -60,12 +60,11 @@ env:
     PGPORT: 25060
     PGUSER: doadmin
 
-    # For now, run all Rails DB roles in the single DO database.
-    # (You can later create 4 DBs in DO and update these to distinct names.)
-    PRIMARY_DB_NAME: defaultdb
-    CACHE_DB_NAME: defaultdb
-    QUEUE_DB_NAME: defaultdb
-    CABLE_DB_NAME: defaultdb
+    # Multi-DB setup (recommended): create these 4 DBs in your DO cluster.
+    PRIMARY_DB_NAME: automatic_patch_production
+    CACHE_DB_NAME: automatic_patch_production_cache
+    QUEUE_DB_NAME: automatic_patch_production_queue
+    CABLE_DB_NAME: automatic_patch_production_cable
 
     # Ensure git pushes to GitHub work inside the container.
     # - Use a temporary known_hosts file (container filesystem is ephemeral).
