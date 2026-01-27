@@ -10,6 +10,7 @@ Rails.application.routes.draw do
 
     resources :branch_targets, only: %i[index edit update]
     resources :candidate_bumps, only: %i[index show update]
+    resources :patch_bundles, only: %i[index show update]
     resources :advisories, only: %i[index show]
     resources :pull_requests, only: %i[index show]
     resources :system_events, only: %i[index show]

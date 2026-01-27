@@ -132,7 +132,17 @@ a:hover {
 }
 
 .table td {
+  /* Bulma sets td color explicitly; override for dark theme readability. */
+  color: var(--text-primary) !important;
   border-color: var(--border-color) !important;
+}
+
+.table td a:not(.button):not(.tag) {
+  color: var(--ruby-red-light);
+}
+
+.table td a:not(.button):not(.tag):hover {
+  color: var(--ruby-red);
 }
 
 .table tbody tr:hover {

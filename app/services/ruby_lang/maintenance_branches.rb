@@ -39,7 +39,7 @@ module RubyLang
 
       doc.css("h3").each do |h3|
         text = h3.text.to_s.strip
-        next unless (m = text.match(/\ARuby\s+(\d+\.\d+)\z/i))
+        next unless (m = text.match(/\ARuby\s+(\d+\.\d+(?:\.\d+)?)\z/i))
 
         series = m[1]
         status_text = find_status_text(h3)
@@ -75,18 +75,22 @@ module RubyLang
       end
 
       def normalize_status(text)
-        down = text.to_s.downcase
-        return "normal" if down.include?("normal maintenance")
-        return "security" if down.include?("security maintenance")
-        return "eol" if down.include?("eol")
+        lines = text.to_s.lines.map { |l| l.strip.downcase }.reject(&:empty?)
+        status_line = lines.find { |l| l.start_with?("status:") }
+        raise ParseError, "unrecognized status (missing status:): #{text.inspect}" if status_line.blank?
 
-        raise ParseError, "unrecognized status: #{text.inspect}"
+        status_value = status_line.sub(/\Astatus:\s*/i, "").strip
+        return "normal" if status_value.include?("normal maintenance")
+        return "security" if status_value.include?("security maintenance")
+        return "eol" if status_value.include?("eol")
+
+        raise ParseError, "unrecognized status: #{status_value.inspect}"
       end
 
       def sanity_check!(branches)
         raise ParseError, "no branches found" if branches.empty?
 
-        unless branches.any? { |b| b.series.match?(/\A\d+\.\d+\z/) }
+        unless branches.any? { |b| b.series.match?(/\A\d+\.\d+(?:\.\d+)?\z/) }
           raise ParseError, "no valid series entries found"
         end
 

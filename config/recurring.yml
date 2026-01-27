@@ -34,6 +34,11 @@ production:
     class: EvaluateOsvVulnerabilitiesJob
     schedule: every day at 3am
 
+  # Re-evaluate PatchBundles awaiting a fix version
+  reevaluate_awaiting_fix:
+    class: ReevaluateAwaitingFixJob
+    schedule: every day at 4am
+
   cleanup_fork_branches:
     class: CleanupForkBranchesJob
     schedule: every hour at minute 25
@@ -58,6 +63,11 @@ development:
   evaluate_osv_vulnerabilities:
     class: EvaluateOsvVulnerabilitiesJob
     schedule: every day at 3am
+
+  # Re-evaluate PatchBundles awaiting a fix version
+  reevaluate_awaiting_fix:
+    class: ReevaluateAwaitingFixJob
+    schedule: every day at 4am
 
   cleanup_fork_branches:
     class: CleanupForkBranchesJob

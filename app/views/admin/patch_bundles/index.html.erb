@@ -1,0 +1,75 @@
+<%= render "admin/shared/nav" %>
+
+<section class="section">
+  <div class="container">
+    <%= render "shared/page_header",
+      title: "Patch Bundles",
+      subtitle: "Security patches grouped by branch and gem. Review and approve before creating PRs." %>
+
+    <%= render layout: "shared/filter_form", locals: { url: admin_patch_bundles_path, clear_path: admin_patch_bundles_path } do %>
+      <%= render "shared/filter_field", label: "State", name: :state, value: params[:state], type: :select, options: PatchBundle::STATES %>
+      <%= render "shared/filter_field", label: "Branch", name: :base_branch, value: params[:base_branch], monospace: true %>
+      <%= render "shared/filter_field", label: "Gem", name: :gem_name, value: params[:gem_name] %>
+    <% end %>
+
+    <div class="box">
+      <table class="table is-fullwidth is-hoverable">
+        <thead>
+          <tr>
+            <th>Branch</th>
+            <th>Gem</th>
+            <th>Bump</th>
+            <th>State</th>
+            <th>Advisories</th>
+            <th>PR</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @patch_bundles.each do |pb| %>
+            <tr>
+              <td class="is-family-monospace"><%= pb.base_branch %></td>
+              <td><%= pb.gem_name %></td>
+              <td class="is-family-monospace">
+                <%= pb.current_version %> →
+                <% if pb.has_fix? %>
+                  <%= pb.target_version %>
+                <% else %>
+                  <span class="has-text-grey">?</span>
+                <% end %>
+              </td>
+              <td><%= render "shared/status_tag", status: pb.state, size: "small" %></td>
+              <td>
+                <span class="tag is-light">
+                  <%= pb.bundled_advisories.size %> CVE<%= pb.bundled_advisories.size == 1 ? "" : "s" %>
+                </span>
+              </td>
+              <td>
+                <% if pb.pull_request.present? %>
+                  <% pr = pb.pull_request %>
+                  <% pr_status_color = case pr.status
+                     when "merged" then "success"
+                     when "closed" then "danger"
+                     else "info"
+                     end %>
+                  <% if pr.pr_url.present? %>
+                    <%= link_to "##{pr.pr_number}", pr.pr_url, target: "_blank", rel: "noopener", class: "tag is-#{pr_status_color}" %>
+                  <% else %>
+                    <span class="tag is-<%= pr_status_color %>">#<%= pr.pr_number || "pending" %></span>
+                  <% end %>
+                <% else %>
+                  <span class="has-text-grey">—</span>
+                <% end %>
+              </td>
+              <td class="has-text-right">
+                <%= link_to "View", admin_patch_bundle_path(pb), class: "button is-small is-link is-light" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+
+    <%= render "shared/pagination", collection: @patch_bundles %>
+  </div>
+</section>

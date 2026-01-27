@@ -33,6 +33,31 @@ module Github
       end
     end
 
+    # Creates a PR for a PatchBundle (new architecture with grouped advisories)
+    def create_for_patch_bundle!(bundle, draft: false)
+      raise Error, "bundle not approved" unless bundle.state == "approved"
+      raise Error, "bundle already has PR" if bundle.pull_request.present?
+      raise Error, "bundle has no target version" unless bundle.has_fix?
+
+      base_branch = bundle.base_branch
+      branch_name = branch_name_for_bundle(bundle)
+
+      Dir.mktmpdir("ruby-core-pr-") do |dir|
+        repo_dir = File.join(dir, "repo")
+        clone_upstream!(dir, repo_dir, base_branch)
+        configure_git_identity!(repo_dir)
+        create_branch!(repo_dir, branch_name)
+
+        apply_bundle_bump!(repo_dir, bundle)
+        commit!(repo_dir, commit_message_for_bundle(bundle))
+        branch_name = ensure_unique_head_branch!(repo_dir, branch_name)
+        push_to_fork!(repo_dir, branch_name)
+
+        pr = ensure_pr_for_bundle!(branch_name, base_branch, bundle, draft: draft)
+        { number: pr.fetch("number"), url: pr.fetch("url"), head_branch: branch_name }
+      end
+    end
+
     private
       def clone_upstream!(work_dir, repo_dir, base_branch)
         run_git!(
@@ -189,6 +214,103 @@ module Github
         base = candidate.base_branch.gsub(/[^A-Za-z0-9._-]/, "-")
         gem = candidate.gem_name.gsub(/[^A-Za-z0-9._-]/, "-")
         ver = candidate.target_version.gsub(/[^A-Za-z0-9._-]/, "-")
+        "bump-#{gem}-#{ver}-#{base}"
+      end
+
+      # PatchBundle-specific methods
+
+      def apply_bundle_bump!(repo_dir, bundle)
+        path = File.join(repo_dir, "gems", "bundled_gems")
+        old_content = File.read(path)
+
+        result =
+          begin
+            RubyCore::BundledGemsBumper.bump!(
+              old_content: old_content,
+              gem_name: bundle.gem_name,
+              target_version: bundle.target_version
+            )
+          rescue RubyCore::BundledGemsFile::ParseError => e
+            assistant = Ai::BundledGemsBumpAssistant.new
+            raise Error, e.message unless assistant.enabled?
+
+            assistant.suggest_bump!(
+              old_content: old_content,
+              gem_name: bundle.gem_name,
+              target_version: bundle.target_version
+            )
+          end
+
+        expected = bundle.proposed_diff.to_s.strip
+        actual = "-#{result.fetch(:old_line).rstrip}\n+#{result.fetch(:new_line).rstrip}"
+        unless expected.blank? || expected == actual
+          raise Error, "proposed diff mismatch (refuse to proceed)"
+        end
+
+        File.write(path, result.fetch(:new_content))
+
+        within_repo(repo_dir) do
+          diff = run_git!("diff", "--name-only").strip
+          raise Error, "unexpected diff files: #{diff.inspect}" unless diff == "gems/bundled_gems"
+        end
+      end
+
+      def ensure_pr_for_bundle!(branch_name, base_branch, bundle, draft:)
+        upstream = @config.upstream_repo
+        head = "#{fork_owner}:#{branch_name}"
+
+        existing = pr_view(upstream, head)
+        return existing if existing
+
+        title = pr_title_for_bundle(bundle)
+        body = pr_body_for_bundle(bundle)
+
+        args = [ "pr", "create", "--repo", upstream, "--head", head, "--base", base_branch, "--title", title, "--body", body ]
+        args << "--draft" if draft
+
+        url = @gh.run!(*args).strip
+        pr = @gh.json!("pr", "view", "--repo", upstream, url, "--json", "number,url,state")
+        pr.merge("url" => pr.fetch("url"))
+      end
+
+      def pr_title_for_bundle(bundle)
+        target = branch_display_name(bundle.base_branch)
+        "Bump #{bundle.gem_name} to #{bundle.target_version} for #{target}"
+      end
+
+      def pr_body_for_bundle(bundle)
+        lines = []
+        lines << "## Summary"
+        lines << "- Security bump for bundled gem `#{bundle.gem_name}`."
+        lines << "- Scope: version bump only (`gems/bundled_gems`)."
+        lines << ""
+        lines << "## Security Advisories Addressed"
+        lines << ""
+
+        bundle.bundled_advisories.includes(:advisory).each do |ba|
+          next unless ba.included_in_fix?
+          advisory = ba.advisory
+          cve = advisory.cve.presence || advisory.fingerprint
+          url = advisory.advisory_url
+          if url.present?
+            lines << "- [#{cve}](#{url}) (#{advisory.source})"
+          else
+            lines << "- #{cve} (#{advisory.source})"
+          end
+        end
+
+        lines << ""
+        lines.join("\n")
+      end
+
+      def commit_message_for_bundle(bundle)
+        "Bump #{bundle.gem_name} to #{bundle.target_version}"
+      end
+
+      def branch_name_for_bundle(bundle)
+        base = bundle.base_branch.gsub(/[^A-Za-z0-9._-]/, "-")
+        gem = bundle.gem_name.gsub(/[^A-Za-z0-9._-]/, "-")
+        ver = bundle.target_version.gsub(/[^A-Za-z0-9._-]/, "-")
         "bump-#{gem}-#{ver}-#{base}"
       end
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_27_012655) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_27_180004) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -70,6 +70,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_27_012655) do
     t.index ["name"], name: "index_branch_targets_on_name", unique: true
   end
 
+  create_table "bundled_advisories", force: :cascade do |t|
+    t.bigint "advisory_id", null: false
+    t.datetime "created_at", null: false
+    t.text "exclusion_reason"
+    t.boolean "included_in_fix", default: true, null: false
+    t.bigint "patch_bundle_id", null: false
+    t.string "suggested_fix_version"
+    t.datetime "updated_at", null: false
+    t.index ["advisory_id", "patch_bundle_id"], name: "index_bundled_advisories_on_advisory_id_and_patch_bundle_id", unique: true
+    t.index ["advisory_id"], name: "index_bundled_advisories_on_advisory_id"
+    t.index ["patch_bundle_id"], name: "index_bundled_advisories_on_patch_bundle_id"
+  end
+
   create_table "candidate_bumps", force: :cascade do |t|
     t.bigint "advisory_id", null: false
     t.datetime "approved_at"
@@ -94,10 +107,36 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_27_012655) do
     t.index ["gem_name", "base_branch", "state"], name: "index_candidate_bumps_on_gem_name_and_base_branch_and_state"
   end
 
+  create_table "patch_bundles", force: :cascade do |t|
+    t.datetime "approved_at"
+    t.string "approved_by"
+    t.string "base_branch", null: false
+    t.text "blocked_reason"
+    t.bigint "branch_target_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "created_pr_at"
+    t.string "current_version", null: false
+    t.string "gem_name", null: false
+    t.datetime "last_attempted_at"
+    t.datetime "last_evaluated_at"
+    t.jsonb "llm_recommendation", default: {}
+    t.datetime "next_eligible_at"
+    t.text "proposed_diff"
+    t.string "resolution_source"
+    t.text "review_notes"
+    t.string "state", default: "pending", null: false
+    t.string "target_version"
+    t.datetime "updated_at", null: false
+    t.index ["branch_target_id", "gem_name", "current_version"], name: "index_patch_bundles_unique_per_branch_gem", unique: true
+    t.index ["branch_target_id"], name: "index_patch_bundles_on_branch_target_id"
+    t.index ["gem_name", "base_branch", "state"], name: "index_patch_bundles_on_gem_name_and_base_branch_and_state"
+    t.index ["state", "last_evaluated_at"], name: "index_patch_bundles_for_reevaluation"
+  end
+
   create_table "pull_requests", force: :cascade do |t|
     t.text "body"
     t.datetime "branch_deleted_at"
-    t.bigint "candidate_bump_id", null: false
+    t.bigint "candidate_bump_id"
     t.datetime "closed_at"
     t.datetime "comments_last_synced_at"
     t.jsonb "comments_snapshot", default: {}, null: false
@@ -108,6 +147,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_27_012655) do
     t.datetime "last_synced_at"
     t.datetime "merged_at"
     t.datetime "opened_at"
+    t.bigint "patch_bundle_id"
     t.integer "pr_number"
     t.text "pr_url"
     t.string "review_state"
@@ -117,6 +157,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_27_012655) do
     t.index ["branch_deleted_at"], name: "index_pull_requests_on_branch_deleted_at"
     t.index ["candidate_bump_id"], name: "index_pull_requests_on_candidate_bump_id", unique: true
     t.index ["fork_repo", "head_branch"], name: "index_pull_requests_on_fork_repo_and_head_branch"
+    t.index ["patch_bundle_id"], name: "index_pull_requests_on_patch_bundle_id"
+    t.index ["patch_bundle_id"], name: "index_pull_requests_on_patch_bundle_unique", unique: true, where: "(patch_bundle_id IS NOT NULL)"
     t.index ["upstream_repo", "pr_number"], name: "index_pull_requests_on_upstream_repo_and_pr_number", unique: true, where: "(pr_number IS NOT NULL)"
   end
 
@@ -132,7 +174,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_27_012655) do
     t.index ["status", "occurred_at"], name: "index_system_events_on_status_and_occurred_at"
   end
 
+  add_foreign_key "bundled_advisories", "advisories"
+  add_foreign_key "bundled_advisories", "patch_bundles"
   add_foreign_key "candidate_bumps", "advisories"
   add_foreign_key "candidate_bumps", "branch_targets"
+  add_foreign_key "patch_bundles", "branch_targets"
   add_foreign_key "pull_requests", "candidate_bumps"
+  add_foreign_key "pull_requests", "patch_bundles"
 end

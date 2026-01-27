@@ -1,0 +1,155 @@
+<%= render "admin/shared/nav" %>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <%= render "shared/page_header",
+      title: "Patch Bundle",
+      subtitle: "#{@patch_bundle.base_branch}: #{@patch_bundle.gem_name} #{@patch_bundle.bump_display}",
+      back_path: admin_patch_bundles_path %>
+
+    <div class="content is-small mb-5">
+      <p>
+        state: <%= render "shared/status_tag", status: @patch_bundle.state %>
+        <% if @patch_bundle.resolution_source.present? %>
+          <span class="tag is-light ml-2">resolved: <%= @patch_bundle.resolution_source %></span>
+        <% end %>
+      </p>
+      <% if @patch_bundle.last_evaluated_at.present? %>
+        <p class="is-size-7 has-text-grey">
+          Last evaluated: <%= @patch_bundle.last_evaluated_at.strftime("%Y-%m-%d %H:%M UTC") %>
+        </p>
+      <% end %>
+    </div>
+
+    <% if @patch_bundle.pull_request.present? %>
+      <% pr = @patch_bundle.pull_request %>
+      <%= render "shared/box_section", title: "Pull Request" do %>
+        <div class="content">
+          <p>
+            <strong>PR #<%= pr.pr_number %></strong>
+            <% status_color = case pr.status
+               when "merged" then "success"
+               when "closed" then "danger"
+               else "info"
+               end %>
+            <span class="tag is-<%= status_color %> ml-2"><%= pr.status %></span>
+            <% if pr.review_state.present? %>
+              <span class="tag is-light ml-1"><%= pr.review_state %></span>
+            <% end %>
+          </p>
+          <% if pr.pr_url.present? %>
+            <p><%= link_to pr.pr_url, pr.pr_url, target: "_blank", rel: "noopener" %></p>
+          <% end %>
+        </div>
+      <% end %>
+    <% end %>
+
+    <%= render "shared/box_section", title: "Linked Advisories (#{@patch_bundle.bundled_advisories.size})" do %>
+      <div class="content">
+        <% if @patch_bundle.bundled_advisories.any? %>
+          <table class="table is-fullwidth is-size-7">
+            <thead>
+              <tr>
+                <th>CVE</th>
+                <th>Source</th>
+                <th>Suggests</th>
+                <th>Included</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @patch_bundle.bundled_advisories.includes(:advisory).each do |ba| %>
+                <tr>
+                  <td>
+                    <%= link_to ba.advisory.cve || ba.advisory.fingerprint,
+                        admin_advisory_path(ba.advisory),
+                        class: "has-text-link" %>
+                  </td>
+                  <td><span class="tag is-small is-light"><%= ba.source %></span></td>
+                  <td class="is-family-monospace">
+                    <%= ba.suggested_fix_version || "—" %>
+                  </td>
+                  <td>
+                    <% if ba.included_in_fix? %>
+                      <span class="tag is-success is-light is-small">Yes</span>
+                    <% else %>
+                      <span class="tag is-warning is-light is-small" title="<%= ba.exclusion_reason %>">No</span>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% else %>
+          <p class="has-text-grey">(no advisories linked)</p>
+        <% end %>
+      </div>
+    <% end %>
+
+    <% if @patch_bundle.blocked_reason.present? %>
+      <%= render "shared/box_section", title: "Blocked Reason" do %>
+        <div class="content">
+          <p class="has-text-danger"><%= @patch_bundle.blocked_reason %></p>
+          <% if @patch_bundle.review_notes.present? %>
+            <p class="is-size-7 has-text-grey"><%= @patch_bundle.review_notes %></p>
+          <% end %>
+        </div>
+      <% end %>
+    <% end %>
+
+    <% if @patch_bundle.llm_recommendation.present? && @patch_bundle.llm_recommendation.any? %>
+      <%= render "shared/box_section", title: "LLM Recommendation" do %>
+        <div class="content is-size-7">
+          <% rec = @patch_bundle.llm_recommendation %>
+          <p><strong>Confidence:</strong> <%= rec["confidence"] %></p>
+          <p><strong>Reasoning:</strong> <%= rec["reasoning"] %></p>
+          <% if rec["excluded_advisories"].present? %>
+            <p><strong>Excluded:</strong> <%= rec["excluded_advisories"].join(", ") %></p>
+            <p><strong>Exclusion reason:</strong> <%= rec["exclusion_reason"] %></p>
+          <% end %>
+        </div>
+      <% end %>
+    <% end %>
+
+    <%= render "shared/box_section", title: "Proposed diff" do %>
+      <%= render "shared/code_block",
+        content: @patch_bundle.proposed_diff,
+        empty_text: "(not generated yet)" %>
+    <% end %>
+
+    <%= render "shared/box_section", title: "Actions" do %>
+      <div class="buttons">
+        <% if %w[ready_for_review needs_review].include?(@patch_bundle.state) %>
+          <%= button_to "Approve", admin_patch_bundle_path(@patch_bundle), method: :patch, params: { event: "approve" }, class: "button is-dark" %>
+          <%= button_to "Reject", admin_patch_bundle_path(@patch_bundle), method: :patch, params: { event: "reject", reason: "rejected_by_admin" }, class: "button is-light" %>
+        <% end %>
+
+        <% if @patch_bundle.state == "approved" %>
+          <%= button_to "Create PR", admin_patch_bundle_path(@patch_bundle), method: :patch, params: { event: "create_pr" }, class: "button is-ruby" %>
+          <%= button_to "Create Draft PR", admin_patch_bundle_path(@patch_bundle), method: :patch, params: { event: "create_draft_pr" }, class: "button is-ruby is-outlined" %>
+        <% end %>
+
+        <% if %w[awaiting_fix needs_review blocked_rate_limited].include?(@patch_bundle.state) %>
+          <%= button_to "Re-evaluate", admin_patch_bundle_path(@patch_bundle), method: :patch, params: { event: "reevaluate" }, class: "button is-info is-light" %>
+        <% end %>
+      </div>
+
+      <% if %w[awaiting_fix needs_review].include?(@patch_bundle.state) %>
+        <hr>
+        <p class="is-size-7 has-text-grey mb-2">Manually set target version:</p>
+        <%= form_with url: admin_patch_bundle_path(@patch_bundle), method: :patch, local: true, class: "field has-addons" do %>
+          <input type="hidden" name="event" value="set_target_version">
+          <div class="control">
+            <input type="text" name="target_version" class="input is-small" placeholder="e.g. 3.2.7" value="<%= @patch_bundle.target_version %>">
+          </div>
+          <div class="control">
+            <button type="submit" class="button is-small is-info">Set Version</button>
+          </div>
+        <% end %>
+      <% end %>
+
+      <p class="is-size-7 has-text-grey mt-3">
+        Two-click safety: Approve first, then Create PR (or Draft PR).
+      </p>
+    <% end %>
+  </div>
+</section>

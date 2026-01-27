@@ -8,5 +8,10 @@ FactoryBot.define do
     pr_url { "https://github.com/ruby/ruby/pull/#{pr_number}" }
     status { "open" }
     opened_at { Time.current }
+
+    trait :for_patch_bundle do
+      candidate_bump { nil }
+      patch_bundle
+    end
   end
 end

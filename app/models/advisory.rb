@@ -2,6 +2,8 @@ class Advisory < ApplicationRecord
   SOURCES = %w[ruby_lang ghsa osv].freeze
 
   has_many :candidate_bumps, dependent: :destroy
+  has_many :bundled_advisories, dependent: :destroy
+  has_many :patch_bundles, through: :bundled_advisories
 
   validates :gem_name, presence: true
   validates :source, presence: true, inclusion: { in: SOURCES }
