@@ -27,17 +27,32 @@ These are the “stateful” entities that let the system be resumable and obser
   - A Ruby branch we evaluate (e.g. `ruby_3_3`, `master`).
   - Tracks `maintenance_status` (`normal`, `security`, `eol`) and `enabled` (EOL branches are disabled).
 
-- **`CandidateBump`** (`app/models/candidate_bump.rb`)
-  - A proposed “bump gem X from A → B on branch Y”.
-  - Has a state machine-ish `state`:
-    - `ready_for_review` / `blocked_rate_limited` / `blocked_ambiguous`
+- **`PatchBundle`** (`app/models/patch_bundle.rb`)
+  - The primary unit of work: a proposed “bump gem X from A → B on branch Y”, **grouping multiple advisories** that are fixed by the same bump.
+  - Key fields: `base_branch`, `gem_name`, `current_version`, `target_version`, `proposed_diff`, `blocked_reason`, `review_notes`.
+  - States (high level):
+    - `awaiting_fix`: no fixed version known yet (e.g. upstream advisory didn’t provide one)
+    - `needs_review`: conflicting fix versions or other ambiguity → requires human decision
+    - `ready_for_review`: safe bump/diff available and ready for approval
+    - `blocked_rate_limited`: safe bump, but rate limits currently block PR creation
     - `approved` / `rejected`
     - `submitted` (PR created) / `failed`
-  - Stores the proposed 1-line diff (`proposed_diff`) and review notes.
+  - Also stores metadata for “how we decided”:
+    - `resolution_source`: `auto` / `llm` / `manual`
+    - `llm_recommendation`: JSON output used when the LLM helps pick a target version
+
+- **`BundledAdvisory`** (`app/models/bundled_advisory.rb`)
+  - Join table between `PatchBundle` and `Advisory`.
+  - Stores per-advisory metadata like `suggested_fix_version`, and whether it was included/excluded.
+
+- **`CandidateBump`** (`app/models/candidate_bump.rb`) *(legacy)*
+  - Older per-advisory candidate records kept for compatibility and historical data.
+  - New UI/workflows should primarily operate on `PatchBundle`.
 
 - **`PullRequest`** (`app/models/pull_request.rb`)
   - Local record of a PR opened in `ruby/ruby`.
   - Tracks `status` (`open`/`closed`/`merged`), timestamps, fork branch name, and **comment snapshots** (`comments_snapshot`).
+  - Belongs to either a `PatchBundle` (new) or `CandidateBump` (legacy).
 
 - **`BotConfig`** (`app/models/bot_config.rb`)
   - Singleton config for safety + targeting:
@@ -81,36 +96,56 @@ These are the “stateful” entities that let the system be resumable and obser
 - **Evaluator**: `Evaluation::BundledGemsVulnerabilityEvaluator` (`app/services/evaluation/bundled_gems_vulnerability_evaluator.rb`)
   - Fetches `gems/bundled_gems` from GitHub for each branch.
   - For each entry, asks the advisory chain for relevant advisories.
-  - For each advisory, asks the candidate builder to build/update a `CandidateBump`.
-- **Candidate builder**: `Evaluation::CandidateBumpBuilder` (`app/services/evaluation/candidate_bump_builder.rb`)
-  - Determines a fixed version, resolves a conservative target version, validates the diff is one-line, enforces rate caps.
-  - If anything is ambiguous/untrusted, it writes a candidate in `blocked_ambiguous` instead of proceeding.
+  - For each advisory, asks the builder to build/update a `PatchBundle` and link the advisory into it.
+- **Patch bundle builder**: `Evaluation::PatchBundleBuilder` (`app/services/evaluation/patch_bundle_builder.rb`)
+  - For each `(branch, gem entry, advisory)` tuple:
+    - Determine a suggested fixed version for that advisory (source data + ruby-lang cross-check)
+    - Link advisory into the `PatchBundle` via `BundledAdvisory`
+    - Resolve a target version across all linked advisories:
+      - If all suggested versions are compatible within the same major/minor, pick the highest (covers all)
+      - If conflicting (e.g. one suggests `3.2.7`, another suggests `3.3.0`), use LLM assistance when available, otherwise set `needs_review`
+    - Generate and validate a **single-line** diff for `gems/bundled_gems`
+    - Enforce rate caps (`blocked_rate_limited`) vs ready state (`ready_for_review`)
+  - Fail-closed behaviors:
+    - If no fix version exists, move to `awaiting_fix`
+    - If generation/validation fails, move to `awaiting_fix` with an explanatory `blocked_reason`
 
-### 4) Human review and PR creation (candidate → PR)
+### 4) Human review and PR creation (patch bundle → PR)
 **Goal**: only create PRs once a human approves the candidate.
 
-- **UI**: Admin panel candidate page triggers actions (`approve`, `reject`, `create_pr`).
-  - Controller: `Admin::CandidateBumpsController` (`app/controllers/admin/candidate_bumps_controller.rb`)
-- **Job**: `CreatePullRequestJob` (`app/jobs/create_pull_request_job.rb`)
+- **UI**: Admin panel patch bundle page triggers actions (`approve`, `reject`, `create_pr`, `create_draft_pr`, `reevaluate`).
+  - Controller: `Admin::PatchBundlesController` (`app/controllers/admin/patch_bundles_controller.rb`)
+- **Job**: `CreatePatchBundlePrJob` (`app/jobs/create_patch_bundle_pr_job.rb`)
   - Re-checks safety conditions under a DB lock:
     - `BotConfig.emergency_stop?` must be false
-    - candidate must still be `approved`
-    - candidate must not already have a `PullRequest`
-  - Calls the PR creator service and then writes:
+    - bundle must still be `approved`
+    - if a PR exists:
+      - do nothing when `open` or `merged`
+      - **allow re-create when `closed`** (updates the same `PullRequest` row rather than creating duplicates)
+  - Calls the PR creator service and then writes/updates:
     - a `PullRequest` row (status `open`, URL/number/head_branch)
-    - candidate transitions to `submitted`
+    - bundle transitions to `submitted` and clears old `blocked_reason`/`review_notes`
   - On failure:
-    - candidate transitions to `failed`
-    - a `SystemEvent(kind: "create_pr")` is recorded with exception details
+    - bundle transitions to `failed`
+    - a `SystemEvent(kind: "create_patch_bundle_pr")` is recorded with exception details
 
 - **PR creator**: `Github::RubyCorePrCreator` (`app/services/github/ruby_core_pr_creator.rb`)
   - Clones upstream branch (`https://github.com/<upstream>.git`) into a temp directory
   - Creates a head branch named like `bump-<gem>-<version>-<branch>`
   - Applies the bump with strict constraints:
-    - expected diff must match `candidate.proposed_diff` (or the candidate must not have one)
+    - expected diff must match `proposed_diff` (or the record must not have one)
     - refuses if any file other than `gems/bundled_gems` changes
   - Pushes to the fork using SSH (`git@github.com:<fork>.git` by default)
   - Creates PR via `gh pr create` (supports draft PRs), and detects existing PRs via `gh pr list --head ...`
+
+### 4b) Re-evaluating “awaiting fix” bundles
+**Goal**: periodically check if upstream sources gained a fixed version for previously-unfixable advisories.
+
+- **Job**: `ReevaluateAwaitingFixJob` (`app/jobs/reevaluate_awaiting_fix_job.rb`)
+  - Finds `PatchBundle` rows in `awaiting_fix` that haven’t been evaluated recently and enqueues per-bundle work.
+- **Job**: `ReevaluatePatchBundleJob` (`app/jobs/reevaluate_patch_bundle_job.rb`)
+  - Calls `Evaluation::PatchBundleBuilder#reevaluate!` to recompute suggested fix versions, target version, diff, and state.
+  - Logs an `ok` / `failed` `SystemEvent(kind: "patch_bundle_reevaluation")`.
 
 ### 5) PR state + comments synchronization (GitHub → PullRequest)
 **Goal**: keep local PR records accurate even if maintainers close/merge, and preserve comments for later review.
@@ -162,7 +197,9 @@ Recurring schedules are defined in `config/recurring.yml`. In production the imp
 
 - `RefreshBranchTargetsJob`: daily (2am)
 - `EvaluateOsvVulnerabilitiesJob`: daily (3am)
-- `SyncPullRequestsJob`: every 30 minutes (captures PR status + comments)
+- `ReevaluateAwaitingFixJob`: daily (4am)
+- `SyncPullRequestsJob` (open): every 5 minutes
+- `SyncPullRequestsJob` (closed/merged): every 6 hours
 - `CleanupForkBranchesJob`: hourly (minute 25)
 - periodic Solid Queue finished job cleanup: hourly (minute 12)
 
