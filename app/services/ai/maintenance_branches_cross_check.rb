@@ -41,7 +41,17 @@ module Ai
 
       return true if d == l
 
-      raise MismatchError, "LLM cross-check mismatch"
+      # Build detailed diff for debugging
+      d_set = d.to_set
+      l_set = l.to_set
+      only_in_deterministic = (d_set - l_set).to_a.sort
+      only_in_llm = (l_set - d_set).to_a.sort
+
+      details = []
+      details << "deterministic_only: #{only_in_deterministic.inspect}" if only_in_deterministic.any?
+      details << "llm_only: #{only_in_llm.inspect}" if only_in_llm.any?
+
+      raise MismatchError, "LLM cross-check mismatch - #{details.join(', ')}"
     end
 
     private

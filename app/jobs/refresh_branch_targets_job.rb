@@ -16,7 +16,8 @@ class RefreshBranchTargetsJob < ApplicationJob
 
       if cross.enabled?
         llm = cross.extract_branches!(html)
-        cross.verify_match!(deterministic: supported, llm: llm)
+        # Compare all branches (including EOL) since LLM extracts everything
+        cross.verify_match!(deterministic: all_branches, llm: llm)
       end
 
       ActiveRecord::Base.transaction do
