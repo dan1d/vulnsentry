@@ -18,14 +18,9 @@ module Github
 
     private
       def issue_comments(upstream_repo, pr_number)
-        data = @gh.json!(
-          "api",
-          "--paginate",
-          "--slurp",
-          "/repos/#{upstream_repo}/issues/#{pr_number}/comments"
-        )
+        data = @gh.paginated_json!("/repos/#{upstream_repo}/issues/#{pr_number}/comments")
 
-        Array(data).map do |c|
+        data.map do |c|
           {
             "id" => c["id"],
             "user" => c.dig("user", "login"),
@@ -38,14 +33,9 @@ module Github
       end
 
       def reviews(upstream_repo, pr_number)
-        data = @gh.json!(
-          "api",
-          "--paginate",
-          "--slurp",
-          "/repos/#{upstream_repo}/pulls/#{pr_number}/reviews"
-        )
+        data = @gh.paginated_json!("/repos/#{upstream_repo}/pulls/#{pr_number}/reviews")
 
-        Array(data).map do |r|
+        data.map do |r|
           {
             "id" => r["id"],
             "user" => r.dig("user", "login"),
@@ -58,14 +48,9 @@ module Github
       end
 
       def review_comments(upstream_repo, pr_number)
-        data = @gh.json!(
-          "api",
-          "--paginate",
-          "--slurp",
-          "/repos/#{upstream_repo}/pulls/#{pr_number}/comments"
-        )
+        data = @gh.paginated_json!("/repos/#{upstream_repo}/pulls/#{pr_number}/comments")
 
-        Array(data).map do |c|
+        data.map do |c|
           {
             "id" => c["id"],
             "user" => c.dig("user", "login"),

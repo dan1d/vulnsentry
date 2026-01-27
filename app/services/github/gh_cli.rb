@@ -42,6 +42,24 @@ module Github
       end
     end
 
+    # Fetches paginated API results and returns them as a single array.
+    # Uses --jq '.[]' to output one JSON object per line (NDJSON), which is
+    # compatible with all gh CLI versions (unlike --slurp which requires 2.47.0+).
+    def paginated_json!(endpoint)
+      stdout, stderr, status, cmd = capture!("api", "--paginate", "--jq", ".[]", endpoint)
+      unless status.success?
+        raise CommandError.new("gh command failed", cmd: cmd, stdout: stdout, stderr: stderr, status: status)
+      end
+
+      return [] if stdout.strip.empty?
+
+      begin
+        stdout.each_line.map { |line| JSON.parse(line) }
+      rescue JSON::ParserError => e
+        raise CommandError.new("gh returned invalid JSON: #{e.message}", cmd: cmd, stdout: stdout, stderr: stderr, status: status)
+      end
+    end
+
     private
       def capture!(*args)
         cmd = [ "gh", *args.map(&:to_s) ]
