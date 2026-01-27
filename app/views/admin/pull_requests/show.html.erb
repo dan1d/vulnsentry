@@ -47,9 +47,20 @@
       <div class="content is-small">
         <table class="table is-narrow is-fullwidth">
           <tbody>
+            <tr>
+              <td class="has-text-grey" style="width: 100px;">Record</td>
+              <td>
+                <%= link_to admin_advisory_path(advisory), class: "has-text-link" do %>
+                  <span class="icon-text">
+                    <span>Advisory #<%= advisory.id %></span>
+                    <span class="icon is-small"><i class="fas fa-arrow-right"></i></span>
+                  </span>
+                <% end %>
+              </td>
+            </tr>
             <% if advisory.cve.present? %>
               <tr>
-                <td class="has-text-grey" style="width: 100px;">CVE</td>
+                <td class="has-text-grey">CVE</td>
                 <td class="is-family-monospace">
                   <%= link_to advisory.cve, "https://nvd.nist.gov/vuln/detail/#{advisory.cve}", target: "_blank", rel: "noopener", class: "has-text-link" %>
                 </td>
@@ -57,7 +68,7 @@
             <% end %>
             <% if advisory.advisory_url.present? %>
               <tr>
-                <td class="has-text-grey">Advisory</td>
+                <td class="has-text-grey">External</td>
                 <td>
                   <%= link_to advisory.advisory_url, advisory.advisory_url, target: "_blank", rel: "noopener", class: "has-text-link is-family-monospace", style: "word-break: break-all;" %>
                 </td>

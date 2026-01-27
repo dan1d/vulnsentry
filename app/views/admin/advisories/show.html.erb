@@ -23,6 +23,42 @@
       <% end %>
     <% end %>
 
+    <%# Related Candidate Bumps & Pull Requests %>
+    <% bumps = @advisory.candidate_bumps.includes(:pull_request).order(:base_branch) %>
+    <% if bumps.any? %>
+      <%= render "shared/box_section", title: "Candidate Bumps (#{bumps.size})" do %>
+        <table class="table is-narrow is-fullwidth is-size-7">
+          <thead>
+            <tr>
+              <th>Branch</th>
+              <th>Version</th>
+              <th>State</th>
+              <th>Pull Request</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% bumps.each do |bump| %>
+              <tr>
+                <td class="is-family-monospace"><%= bump.base_branch %></td>
+                <td class="is-family-monospace"><%= bump.current_version %> → <%= bump.target_version %></td>
+                <td><span class="tag is-light"><%= bump.state %></span></td>
+                <td>
+                  <% if bump.pull_request %>
+                    <%= link_to admin_pull_request_path(bump.pull_request), class: "has-text-link" do %>
+                      PR #<%= bump.pull_request.pr_number || "?" %>
+                      <span class="tag is-small <%= pr_status_class(bump.pull_request.status) %> ml-1"><%= bump.pull_request.status %></span>
+                    <% end %>
+                  <% else %>
+                    <span class="has-text-grey">—</span>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+    <% end %>
+
     <%= render "shared/box_section", title: "Raw payload" do %>
       <%= render "shared/code_block", content: JSON.pretty_generate(@advisory.raw || {}) %>
     <% end %>
