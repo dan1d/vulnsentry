@@ -4,16 +4,12 @@ RSpec.describe "admin/branch_targets/index", type: :view do
   it "renders filters and pagination nav" do
     branch = build_stubbed(:branch_target, name: "ruby_3_4", enabled: true, maintenance_status: "normal")
 
-    request_obj = Pagy::Request.new(request: { base_url: "http://test.host", path: "/admin/branch_targets", params: {} })
-    pagy = Pagy::Offset.new(count: 1, page: 1, limit: 50, request: request_obj)
-
-    assign(:branch_targets, [ branch ])
-    assign(:pagy, pagy)
+    assign(:branch_targets, Kaminari.paginate_array([ branch ]).page(1).per(50))
 
     render
 
     expect(rendered).to include("Branch targets")
     expect(rendered).to include("Maintenance status")
-    expect(rendered).to include("series-nav")
+    expect(rendered).to include("Per page")
   end
 end

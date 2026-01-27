@@ -26,20 +26,29 @@
       <%= render "shared/box_section", title: "Pull Request" do %>
         <div class="content">
           <p>
-            <strong>PR #<%= pr.pr_number %></strong>
+            <% if pr.pr_url.present? %>
+              <%= link_to "PR ##{pr.pr_number}", pr.pr_url, target: "_blank", rel: "noopener", class: "tag is-link is-medium" %>
+            <% else %>
+              <span class="tag is-link is-medium">PR #<%= pr.pr_number || "pending" %></span>
+            <% end %>
             <% status_color = case pr.status
                when "merged" then "success"
                when "closed" then "danger"
                else "info"
                end %>
-            <span class="tag is-<%= status_color %> ml-2"><%= pr.status %></span>
+            <span class="tag is-<%= status_color %> ml-2" title="PR state on GitHub"><%= pr.status %></span>
             <% if pr.review_state.present? %>
-              <span class="tag is-light ml-1"><%= pr.review_state %></span>
+              <span class="tag is-light ml-1" title="Latest review summary on GitHub">review: <%= pr.review_state %></span>
             <% end %>
           </p>
           <% if pr.pr_url.present? %>
-            <p><%= link_to pr.pr_url, pr.pr_url, target: "_blank", rel: "noopener" %></p>
+            <p><%= link_to pr.pr_url, pr.pr_url, target: "_blank", rel: "noopener", class: "has-text-link" %></p>
           <% end %>
+          <p class="is-size-7 has-text-grey">
+            <strong>What the badges mean:</strong>
+            <span class="is-family-monospace">closed</span> = the PR was closed without merging.
+            <span class="is-family-monospace">review: pending</span> = no approval/rejection recorded (often happens if closed quickly).
+          </p>
         </div>
       <% end %>
     <% end %>
@@ -124,11 +133,18 @@
         <% end %>
 
         <% if @patch_bundle.state == "approved" %>
-          <%= button_to "Create PR", admin_patch_bundle_path(@patch_bundle), method: :patch, params: { event: "create_pr" }, class: "button is-ruby" %>
-          <%= button_to "Create Draft PR", admin_patch_bundle_path(@patch_bundle), method: :patch, params: { event: "create_draft_pr" }, class: "button is-ruby is-outlined" %>
+          <% pr = @patch_bundle.pull_request %>
+          <% recreate = pr.present? && pr.status == "closed" %>
+          <%= button_to (recreate ? "Recreate PR" : "Create PR"), admin_patch_bundle_path(@patch_bundle), method: :patch, params: { event: "create_pr" }, class: "button is-ruby" %>
+          <%= button_to (recreate ? "Recreate Draft PR" : "Create Draft PR"), admin_patch_bundle_path(@patch_bundle), method: :patch, params: { event: "create_draft_pr" }, class: "button is-ruby is-outlined" %>
+          <% if recreate %>
+            <p class="is-size-7 has-text-grey mt-2">
+              This will create a new PR and update the existing record.
+            </p>
+          <% end %>
         <% end %>
 
-        <% if %w[awaiting_fix needs_review blocked_rate_limited].include?(@patch_bundle.state) %>
+        <% if %w[failed awaiting_fix needs_review blocked_rate_limited].include?(@patch_bundle.state) %>
           <%= button_to "Re-evaluate", admin_patch_bundle_path(@patch_bundle), method: :patch, params: { event: "reevaluate" }, class: "button is-info is-light" %>
         <% end %>
       </div>

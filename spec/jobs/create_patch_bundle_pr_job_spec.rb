@@ -70,14 +70,52 @@ RSpec.describe CreatePatchBundlePrJob, type: :job do
     end
 
     context "when bundle already has a PR" do
+      let(:creator) { instance_double(Github::RubyCorePrCreator) }
+
       before do
-        create(:pull_request, patch_bundle: bundle)
+        create(:pull_request, patch_bundle: bundle, status: pr_status)
+        allow(Github::RubyCorePrCreator).to receive(:new).and_return(creator)
+        allow(creator).to receive(:create_for_patch_bundle!).and_return({
+          number: 99999,
+          url: "https://github.com/ruby/ruby/pull/99999",
+          head_branch: "bump-rexml-3.2.7-ruby_3_0-2"
+        })
       end
 
-      it "does nothing" do
-        expect {
-          described_class.perform_now(bundle.id)
-        }.not_to change(PullRequest, :count)
+      context "when PR is open" do
+        let(:pr_status) { "open" }
+
+        it "does nothing" do
+          expect {
+            described_class.perform_now(bundle.id)
+          }.not_to change(PullRequest, :count)
+        end
+      end
+
+      context "when PR is merged" do
+        let(:pr_status) { "merged" }
+
+        it "does nothing" do
+          expect {
+            described_class.perform_now(bundle.id)
+          }.not_to change(PullRequest, :count)
+        end
+      end
+
+      context "when PR is closed" do
+        let(:pr_status) { "closed" }
+
+        it "recreates by updating the existing PullRequest record" do
+          pr = bundle.pull_request
+
+          expect {
+            described_class.perform_now(bundle.id)
+          }.not_to change(PullRequest, :count)
+
+          pr.reload
+          expect(pr.pr_number).to eq(99999)
+          expect(pr.status).to eq("open")
+        end
       end
     end
 

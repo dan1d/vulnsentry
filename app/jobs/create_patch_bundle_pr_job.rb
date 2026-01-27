@@ -11,13 +11,17 @@ class CreatePatchBundlePrJob < ApplicationJob
 
     bundle.with_lock do
       return unless bundle.state == "approved"
-      return if bundle.pull_request.present?
+      existing_pr = bundle.pull_request
+      # If a PR is already open, do nothing. If it was closed, allow recreating.
+      return if existing_pr&.status == "open"
+      # If it was merged, it should not be recreated.
+      return if existing_pr&.status == "merged"
 
       creator = Github::RubyCorePrCreator.new
       result = creator.create_for_patch_bundle!(bundle, draft: draft)
 
       PullRequest.transaction do
-        PullRequest.create!(
+        attrs = {
           patch_bundle: bundle,
           upstream_repo: config.upstream_repo,
           fork_repo: config.fork_repo,
@@ -25,10 +29,24 @@ class CreatePatchBundlePrJob < ApplicationJob
           pr_number: result.fetch(:number),
           pr_url: result.fetch(:url),
           status: "open",
-          opened_at: Time.current
-        )
+          opened_at: Time.current,
+          closed_at: nil,
+          merged_at: nil
+        }
 
-        bundle.update!(state: "submitted", created_pr_at: Time.current)
+        if existing_pr.present?
+          existing_pr.update!(attrs.except(:patch_bundle))
+        else
+          PullRequest.create!(attrs)
+        end
+
+        bundle.update!(
+          state: "submitted",
+          created_pr_at: Time.current,
+          blocked_reason: nil,
+          review_notes: nil,
+          last_attempted_at: nil
+        )
       end
 
       log_success(bundle, result)

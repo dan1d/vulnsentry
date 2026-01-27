@@ -11,16 +11,12 @@ RSpec.describe "admin/candidate_bumps/index", type: :view do
       state: "ready_for_review"
     )
 
-    request_obj = Pagy::Request.new(request: { base_url: "http://test.host", path: "/admin/candidate_bumps", params: {} })
-    pagy = Pagy::Offset.new(count: 1, page: 1, limit: 50, request: request_obj)
-
-    assign(:candidate_bumps, [ candidate ])
-    assign(:pagy, pagy)
+    assign(:candidate_bumps, Kaminari.paginate_array([ candidate ]).page(1).per(50))
 
     render
 
     expect(rendered).to include("Candidate bumps")
     expect(rendered).to include("Filter")
-    expect(rendered).to include("series-nav")
+    expect(rendered).to include("Per page")
   end
 end

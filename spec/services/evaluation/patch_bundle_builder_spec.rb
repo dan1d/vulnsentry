@@ -1,4 +1,5 @@
 require "rails_helper"
+require "ostruct"
 
 RSpec.describe Evaluation::PatchBundleBuilder do
   subject(:builder) do

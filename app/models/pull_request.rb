@@ -15,7 +15,9 @@ class PullRequest < ApplicationRecord
   private
 
   def has_parent_reference
-    return if candidate_bump_id.present? || patch_bundle_id.present?
+    # Important: in tests and in-memory objects, associations may be present
+    # even when the foreign key isn't persisted yet.
+    return if candidate_bump.present? || patch_bundle.present?
 
     errors.add(:base, "must belong to either candidate_bump or patch_bundle")
   end

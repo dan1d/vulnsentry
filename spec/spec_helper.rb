@@ -13,6 +13,33 @@
 # it.
 #
 # See https://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
+
+# Ensure local env vars (db, tokens, etc.) are available for specs.
+# We use `dotenv` (already bundled via our dependencies) rather than relying on
+# shell-level exports so `bundle exec rspec` works consistently.
+ENV["RAILS_ENV"] ||= "test"
+begin
+  require "dotenv"
+  root = File.expand_path("..", __dir__)
+  # Use overload so `.env.local` wins even if direnv exported `.env.production`.
+  Dotenv.overload(File.join(root, ".env.local"))
+  Dotenv.load(File.join(root, ".env"))
+rescue LoadError
+  # dotenv isn't a direct dependency; if it's not available, just continue.
+end
+
+# If direnv exported production SSL settings, tests against local Postgres will fail.
+# Keep test defaults local-friendly.
+if ENV["RAILS_ENV"] == "test"
+  ENV["PGSSLMODE"] = "disable"
+
+  # Avoid accidentally reusing dev/prod database names in test runs.
+  ENV["PRIMARY_DB_NAME"] = "automatic_patch_test"
+  ENV["CACHE_DB_NAME"] = "automatic_patch_test_cache"
+  ENV["QUEUE_DB_NAME"] = "automatic_patch_test_queue"
+  ENV["CABLE_DB_NAME"] = "automatic_patch_test_cable"
+end
+
 RSpec.configure do |config|
   # rspec-expectations config goes here. You can use an alternate
   # assertion/expectation library such as wrong or the stdlib/minitest
