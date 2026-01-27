@@ -32,4 +32,17 @@ RSpec.describe RubyLang::MaintenanceBranches do
     expect(branches.find { |b| b.series == "3.1" }.status).to eq("eol")
     expect(branches.find { |b| b.series == "2.0.0" }.status).to eq("eol")
   end
+
+  it "parses status correctly even when <br> does not include newlines" do
+    html = <<~HTML
+      <h3>Ruby 3.2</h3>
+      <p>status: security maintenance<br>release date: 2022-12-25<br>normal maintenance until: 2025-04-01<br>EOL: 2026-03-31 (expected)</p>
+      <h3>Ruby 2.1</h3>
+      <p>status: eol<br>release date: 2013-12-25<br>normal maintenance until: 2016-03-31<br>EOL: 2017-03-31</p>
+    HTML
+
+    branches = described_class.new.parse_all_html(html)
+    expect(branches.find { |b| b.series == "3.2" }.status).to eq("security")
+    expect(branches.find { |b| b.series == "2.1" }.status).to eq("eol")
+  end
 end

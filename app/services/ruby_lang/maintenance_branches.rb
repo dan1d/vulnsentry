@@ -75,14 +75,19 @@ module RubyLang
       end
 
       def normalize_status(text)
-        lines = text.to_s.lines.map { |l| l.strip.downcase }.reject(&:empty?)
-        status_line = lines.find { |l| l.start_with?("status:") }
-        raise ParseError, "unrecognized status (missing status:): #{text.inspect}" if status_line.blank?
+        # ruby-lang HTML often uses `<br>` without newlines; Nokogiri will then
+        # produce a single text line like:
+        #   "status: eolrelease date: ...normal maintenance until: ..."
+        # In that case, checking for "normal maintenance" first would misclassify
+        # EOL/security branches. Extract just the status field and prioritize
+        # security/eol over normal.
+        raw = text.to_s.downcase
+        status_value = raw[/status:\s*(.+?)(?:release date:|normal maintenance until:|eol:|\z)/im, 1]&.strip
+        raise ParseError, "unrecognized status (missing status:): #{text.inspect}" if status_value.blank?
 
-        status_value = status_line.sub(/\Astatus:\s*/i, "").strip
-        return "normal" if status_value.include?("normal maintenance")
         return "security" if status_value.include?("security maintenance")
-        return "eol" if status_value.include?("eol")
+        return "eol" if status_value.include?("eol") || status_value.include?("end-of-life") || status_value.include?("end of life")
+        return "normal" if status_value.include?("normal maintenance")
 
         raise ParseError, "unrecognized status: #{status_value.inspect}"
       end
