@@ -120,7 +120,6 @@ jobs:
 
   system-test:
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('test/system/**/*', 'spec/system/**/*') != '' }}
 
     services:
       postgres:

@@ -6,7 +6,7 @@ module Github
 
     # Returns hash with :status ("open"/"closed"/"merged"), and timestamps.
     def fetch(upstream_repo:, pr_number:)
-      data = @gh.json!("api", "--silent", "--method", "GET", "/repos/#{upstream_repo}/pulls/#{pr_number}")
+      data = @gh.json!("api", "/repos/#{upstream_repo}/pulls/#{pr_number}")
 
       state = data.fetch("state") # "open" / "closed"
       merged_at = data["merged_at"]

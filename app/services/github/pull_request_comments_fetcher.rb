@@ -20,7 +20,6 @@ module Github
       def issue_comments(upstream_repo, pr_number)
         data = @gh.json!(
           "api",
-          "--silent",
           "--paginate",
           "--slurp",
           "/repos/#{upstream_repo}/issues/#{pr_number}/comments"
@@ -41,7 +40,6 @@ module Github
       def reviews(upstream_repo, pr_number)
         data = @gh.json!(
           "api",
-          "--silent",
           "--paginate",
           "--slurp",
           "/repos/#{upstream_repo}/pulls/#{pr_number}/reviews"
@@ -62,7 +60,6 @@ module Github
       def review_comments(upstream_repo, pr_number)
         data = @gh.json!(
           "api",
-          "--silent",
           "--paginate",
           "--slurp",
           "/repos/#{upstream_repo}/pulls/#{pr_number}/comments"

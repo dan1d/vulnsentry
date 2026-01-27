@@ -41,7 +41,7 @@ RSpec.describe SyncPullRequestsJob, type: :job do
     cmd_error =
       Github::GhCli::CommandError.new(
         "gh returned invalid JSON: unexpected end of input at line 1 column 1",
-        cmd: %w[gh api --silent --method GET /repos/ruby/ruby/pulls/15971],
+        cmd: %w[gh api /repos/ruby/ruby/pulls/15971],
         stdout: "",
         stderr: "",
         status: status
