@@ -20,6 +20,7 @@
             <th>Gem</th>
             <th>Bump</th>
             <th>State</th>
+            <th>PR</th>
             <th></th>
           </tr>
         </thead>
@@ -30,6 +31,23 @@
               <td><%= c.gem_name %></td>
               <td class="is-family-monospace"><%= c.current_version %> → <%= c.target_version %></td>
               <td><%= render "shared/status_tag", status: c.state, size: "small" %></td>
+              <td>
+                <% if c.pull_request.present? %>
+                  <% pr = c.pull_request %>
+                  <% pr_status_color = case pr.status
+                     when "merged" then "success"
+                     when "closed" then "danger"
+                     else "info"
+                     end %>
+                  <% if pr.pr_url.present? %>
+                    <%= link_to "##{pr.pr_number}", pr.pr_url, target: "_blank", rel: "noopener", class: "tag is-#{pr_status_color}" %>
+                  <% else %>
+                    <span class="tag is-<%= pr_status_color %>">#<%= pr.pr_number || "pending" %></span>
+                  <% end %>
+                <% else %>
+                  <span class="has-text-grey">—</span>
+                <% end %>
+              </td>
               <td class="has-text-right">
                 <%= link_to "View", admin_candidate_bump_path(c), class: "button is-small is-link is-light" %>
               </td>

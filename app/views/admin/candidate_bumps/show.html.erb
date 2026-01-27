@@ -11,6 +11,44 @@
       <p>state: <%= render "shared/status_tag", status: @candidate_bump.state %></p>
     </div>
 
+    <% if @candidate_bump.pull_request.present? %>
+      <% pr = @candidate_bump.pull_request %>
+      <%= render "shared/box_section", title: "Pull Request" do %>
+        <div class="content">
+          <p>
+            <strong>PR #<%= pr.pr_number %></strong>
+            <% status_color = case pr.status
+               when "merged" then "success"
+               when "closed" then "danger"
+               else "info"
+               end %>
+            <span class="tag is-<%= status_color %> ml-2"><%= pr.status %></span>
+            <% if pr.review_state.present? %>
+              <span class="tag is-light ml-1"><%= pr.review_state %></span>
+            <% end %>
+          </p>
+          <% if pr.pr_url.present? %>
+            <p>
+              <%= link_to pr.pr_url, pr.pr_url, target: "_blank", rel: "noopener" %>
+            </p>
+          <% end %>
+          <p class="is-size-7 has-text-grey">
+            <% if pr.opened_at.present? %>
+              Opened: <%= pr.opened_at.strftime("%Y-%m-%d %H:%M UTC") %>
+            <% end %>
+            <% if pr.merged_at.present? %>
+              <br>Merged: <%= pr.merged_at.strftime("%Y-%m-%d %H:%M UTC") %>
+            <% elsif pr.closed_at.present? %>
+              <br>Closed: <%= pr.closed_at.strftime("%Y-%m-%d %H:%M UTC") %>
+            <% end %>
+            <% if pr.last_synced_at.present? %>
+              <br>Last synced: <%= pr.last_synced_at.strftime("%Y-%m-%d %H:%M UTC") %>
+            <% end %>
+          </p>
+        </div>
+      <% end %>
+    <% end %>
+
     <%= render "shared/box_section", title: "Proposed diff" do %>
       <%= render "shared/code_block",
         content: @candidate_bump.proposed_diff,
