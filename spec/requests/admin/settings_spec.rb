@@ -19,4 +19,12 @@ RSpec.describe "Admin::Settings", type: :request do
     expect(response).to have_http_status(:redirect)
     expect(BotConfig.instance.global_daily_cap).to eq(2)
   end
+
+  it "enqueues RefreshBranchTargetsJob on refresh_branches" do
+    sign_in_admin
+    expect {
+      post "/admin/settings/refresh_branches"
+    }.to have_enqueued_job(RefreshBranchTargetsJob)
+    expect(response).to redirect_to(admin_branch_targets_path)
+  end
 end

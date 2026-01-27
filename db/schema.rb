@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_26_093000) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_27_012655) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -95,6 +95,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_26_093000) do
   end
 
   create_table "pull_requests", force: :cascade do |t|
+    t.text "body"
     t.datetime "branch_deleted_at"
     t.bigint "candidate_bump_id", null: false
     t.datetime "closed_at"
@@ -103,11 +104,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_26_093000) do
     t.datetime "created_at", null: false
     t.string "fork_repo", default: "dan1d/ruby", null: false
     t.string "head_branch"
+    t.jsonb "labels", default: [], null: false
     t.datetime "last_synced_at"
     t.datetime "merged_at"
     t.datetime "opened_at"
     t.integer "pr_number"
     t.text "pr_url"
+    t.string "review_state"
     t.string "status", default: "open", null: false
     t.datetime "updated_at", null: false
     t.string "upstream_repo", default: "ruby/ruby", null: false

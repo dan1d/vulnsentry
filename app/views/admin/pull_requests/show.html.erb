@@ -7,15 +7,79 @@
       subtitle: "#{@pull_request.candidate_bump.base_branch}: #{@pull_request.candidate_bump.gem_name} → #{@pull_request.candidate_bump.target_version}",
       back_path: admin_pull_requests_path %>
 
-    <div class="content is-small mb-5">
-      <p>status: <span class="is-family-monospace"><%= @pull_request.status %></span></p>
-      <p>
-        synced: <span class="is-family-monospace"><%= @pull_request.last_synced_at&.iso8601 || "-" %></span>
-        · comments: <span class="is-family-monospace"><%= @pull_request.comments_last_synced_at&.iso8601 || "-" %></span>
-      </p>
+    <%# Status and Review State %>
+    <div class="box mb-4">
+      <div class="columns is-mobile">
+        <div class="column">
+          <p class="is-size-7 has-text-grey mb-1">Status</p>
+          <span class="tag is-medium <%= pr_status_class(@pull_request.status) %>">
+            <%= @pull_request.status %>
+          </span>
+        </div>
+        <div class="column">
+          <p class="is-size-7 has-text-grey mb-1">Review State</p>
+          <span class="tag is-medium <%= pr_review_state_class(@pull_request.review_state) %>">
+            <%= @pull_request.review_state || "pending" %>
+          </span>
+        </div>
+        <div class="column">
+          <p class="is-size-7 has-text-grey mb-1">Labels</p>
+          <% if @pull_request.labels.present? %>
+            <% @pull_request.labels.each do |label| %>
+              <span class="tag is-light"><%= label %></span>
+            <% end %>
+          <% else %>
+            <span class="has-text-grey">—</span>
+          <% end %>
+        </div>
+      </div>
+      <div class="content is-small mt-3">
+        <p>
+          synced: <span class="is-family-monospace"><%= @pull_request.last_synced_at&.iso8601 || "-" %></span>
+          · comments: <span class="is-family-monospace"><%= @pull_request.comments_last_synced_at&.iso8601 || "-" %></span>
+        </p>
+      </div>
     </div>
 
-    <%= render "shared/box_section", title: "Links" do %>
+    <%# Advisory Information %>
+    <% advisory = @pull_request.candidate_bump.advisory %>
+    <%= render "shared/box_section", title: "Advisory" do %>
+      <div class="content is-small">
+        <table class="table is-narrow is-fullwidth">
+          <tbody>
+            <% if advisory.cve.present? %>
+              <tr>
+                <td class="has-text-grey" style="width: 100px;">CVE</td>
+                <td class="is-family-monospace">
+                  <%= link_to advisory.cve, "https://nvd.nist.gov/vuln/detail/#{advisory.cve}", target: "_blank", rel: "noopener", class: "has-text-link" %>
+                </td>
+              </tr>
+            <% end %>
+            <% if advisory.advisory_url.present? %>
+              <tr>
+                <td class="has-text-grey">Advisory</td>
+                <td>
+                  <%= link_to advisory.advisory_url, advisory.advisory_url, target: "_blank", rel: "noopener", class: "has-text-link is-family-monospace", style: "word-break: break-all;" %>
+                </td>
+              </tr>
+            <% end %>
+            <tr>
+              <td class="has-text-grey">Source</td>
+              <td class="is-family-monospace"><%= advisory.fingerprint %></td>
+            </tr>
+            <% if advisory.severity.present? %>
+              <tr>
+                <td class="has-text-grey">Severity</td>
+                <td><span class="tag <%= severity_class(advisory.severity) %>"><%= advisory.severity %></span></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+
+    <%# GitHub Link %>
+    <%= render "shared/box_section", title: "GitHub" do %>
       <% if (url = safe_http_url(@pull_request.pr_url)) %>
         <p><%= link_to url, url, class: "has-text-link", target: "_blank", rel: "noopener" %></p>
       <% else %>
@@ -23,6 +87,18 @@
       <% end %>
     <% end %>
 
+    <%# PR Description %>
+    <%= render "shared/box_section", title: "PR Description" do %>
+      <% if @pull_request.body.present? %>
+        <div class="content is-small">
+          <%= simple_format(truncate(@pull_request.body, length: 2000)) %>
+        </div>
+      <% else %>
+        <p class="has-text-grey">(no description)</p>
+      <% end %>
+    <% end %>
+
+    <%# Comments %>
     <% snapshot = @pull_request.comments_snapshot || {} %>
     <% issue_comments = Array(snapshot["issue_comments"]) %>
     <% reviews = Array(snapshot["reviews"]) %>

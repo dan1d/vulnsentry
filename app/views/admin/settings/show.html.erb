@@ -23,6 +23,25 @@
       <p>fork_repo: <span class="is-family-monospace"><%= @config.fork_repo %></span></p>
       <p>upstream_repo: <span class="is-family-monospace"><%= @config.upstream_repo %></span></p>
       <p>fork_git_url: <span class="is-family-monospace"><%= @config.fork_git_url %></span></p>
+
+      <% deepseek_client = Ai::DeepseekClient.new %>
+      <% bump_assistant = Ai::BundledGemsBumpAssistant.new %>
+      <p class="has-text-weight-medium mt-5">AI (Deepseek)</p>
+      <p>
+        <strong>API configured</strong>:
+        <%= render "shared/status_tag", status: deepseek_client.enabled?.to_s %>
+        <span class="is-size-7 has-text-grey ml-2">(DEEPSEEK_API_KEY)</span>
+      </p>
+      <p>
+        <strong>Branch cross-check</strong>:
+        <%= render "shared/status_tag", status: deepseek_client.enabled?.to_s %>
+        <span class="is-size-7 has-text-grey ml-2">Validates branch parsing against LLM</span>
+      </p>
+      <p>
+        <strong>Bundled gems assistant</strong>:
+        <%= render "shared/status_tag", status: bump_assistant.enabled?.to_s %>
+        <span class="is-size-7 has-text-grey ml-2">(ENABLE_DEEPSEEK_BUNDLED_GEMS_ASSIST)</span>
+      </p>
     </div>
   </div>
 </section>

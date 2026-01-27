@@ -13,7 +13,9 @@ Rails.application.routes.draw do
     resources :advisories, only: %i[index show]
     resources :pull_requests, only: %i[index show]
     resources :system_events, only: %i[index show]
-    resource :settings, only: %i[show edit update]
+    resource :settings, only: %i[show edit update] do
+      post :refresh_branches, on: :collection
+    end
   end
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 

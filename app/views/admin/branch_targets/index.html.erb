@@ -2,9 +2,20 @@
 
 <section class="section">
   <div class="container">
-    <%= render "shared/page_header",
-      title: "Branch targets",
-      subtitle: "Enable/disable supported branches." %>
+    <div class="level">
+      <div class="level-left">
+        <%= render "shared/page_header",
+          title: "Branch targets",
+          subtitle: "Enable/disable supported branches." %>
+      </div>
+      <div class="level-right">
+        <%= button_to "Refresh from ruby-lang.org",
+              refresh_branches_admin_settings_path,
+              method: :post,
+              class: "button is-info",
+              data: { turbo_confirm: "This will fetch the latest branch statuses from ruby-lang.org and mark old branches as EOL. Continue?" } %>
+      </div>
+    </div>
 
     <%= render layout: "shared/filter_form", locals: { url: admin_branch_targets_path, clear_path: admin_branch_targets_path } do %>
       <%= render "shared/filter_field", label: "Enabled", name: :enabled, value: params[:enabled], type: :select, options: [["true", "true"], ["false", "false"]] %>

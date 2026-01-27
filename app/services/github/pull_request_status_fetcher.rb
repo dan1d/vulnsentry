@@ -4,7 +4,7 @@ module Github
       @gh = gh
     end
 
-    # Returns hash with :status ("open"/"closed"/"merged"), and timestamps.
+    # Returns hash with :status ("open"/"closed"/"merged"), timestamps, body, and labels.
     def fetch(upstream_repo:, pr_number:)
       data = @gh.json!("api", "/repos/#{upstream_repo}/pulls/#{pr_number}")
 
@@ -25,8 +25,16 @@ module Github
         status: status,
         opened_at: data["created_at"],
         merged_at: merged_at,
-        closed_at: closed_at
+        closed_at: closed_at,
+        body: data["body"],
+        labels: extract_labels(data["labels"])
       }
     end
+
+    private
+      def extract_labels(labels_data)
+        return [] unless labels_data.is_a?(Array)
+        labels_data.map { |l| l["name"] }.compact
+      end
   end
 end

@@ -16,6 +16,11 @@ class Admin::SettingsController < Admin::BaseController
     end
   end
 
+  def refresh_branches
+    RefreshBranchTargetsJob.perform_later
+    redirect_to admin_branch_targets_path, notice: "Branch refresh job enqueued. Old/unmaintained branches will be marked as EOL."
+  end
+
   private
     def bot_config_params
       params.require(:bot_config).permit(

@@ -18,9 +18,17 @@ production:
     class: RefreshBranchTargetsJob
     schedule: every day at 2am
 
-  sync_pull_requests:
+  # Open PRs need fresh data - sync frequently
+  sync_open_pull_requests:
     class: SyncPullRequestsJob
-    schedule: every 30 minutes
+    args: [{ scope: "open" }]
+    schedule: every 5 minutes
+
+  # Closed/merged PRs rarely change - sync less often
+  sync_closed_pull_requests:
+    class: SyncPullRequestsJob
+    args: [{ scope: "closed" }]
+    schedule: every 6 hours
 
   evaluate_osv_vulnerabilities:
     class: EvaluateOsvVulnerabilitiesJob
@@ -35,9 +43,17 @@ development:
     class: RefreshBranchTargetsJob
     schedule: every day at 2am
 
-  sync_pull_requests:
+  # Open PRs need fresh data - sync frequently
+  sync_open_pull_requests:
     class: SyncPullRequestsJob
-    schedule: every 30 minutes
+    args: [{ scope: "open" }]
+    schedule: every 5 minutes
+
+  # Closed/merged PRs rarely change - sync less often
+  sync_closed_pull_requests:
+    class: SyncPullRequestsJob
+    args: [{ scope: "closed" }]
+    schedule: every 6 hours
 
   evaluate_osv_vulnerabilities:
     class: EvaluateOsvVulnerabilitiesJob
