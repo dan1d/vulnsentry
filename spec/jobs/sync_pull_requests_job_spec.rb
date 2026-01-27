@@ -10,6 +10,10 @@ RSpec.describe SyncPullRequestsJob, type: :job do
   end
 
   def stub_fetchers(status: "open", body: "PR body", labels: [], reviews: [])
+    # Verify the stubs are being set up correctly
+    expect(status_fetcher).to be_a(RSpec::Mocks::InstanceVerifyingDouble)
+    expect(comments_fetcher).to be_a(RSpec::Mocks::InstanceVerifyingDouble)
+
     allow(status_fetcher).to receive(:fetch).and_return(
       status: status,
       opened_at: "2026-01-25T10:00:00Z",
@@ -77,29 +81,27 @@ RSpec.describe SyncPullRequestsJob, type: :job do
       cb = create(:candidate_bump)
       pr = create(:pull_request, candidate_bump: cb, pr_number: 123, upstream_repo: "ruby/ruby", status: "open")
 
-      # Explicitly stub both fetchers with all required fields
-      allow(status_fetcher).to receive(:fetch).and_return(
-        status: "open",
-        opened_at: "2026-01-25T10:00:00Z",
-        merged_at: nil,
-        closed_at: nil,
-        body: "PR body",
-        labels: []
-      )
-      allow(comments_fetcher).to receive(:fetch).and_return(
-        issue_comments: [],
-        reviews: [{ "id" => 1, "user" => "matz", "state" => "APPROVED", "body" => "LGTM" }],
-        review_comments: []
-      )
+      stub_fetchers(reviews: [
+        { "id" => 1, "user" => "matz", "state" => "APPROVED", "body" => "LGTM" }
+      ])
+
+      # Debug: check all PRs before job runs
+      all_prs = PullRequest.all.pluck(:id, :pr_number, :status)
+      expect(all_prs.length).to eq(1), "Expected 1 PR, got: #{all_prs.inspect}"
+
+      # Spy on the sync_one method
+      allow_any_instance_of(SyncPullRequestsJob).to receive(:sync_one).and_wrap_original do |m, *args|
+        begin
+          m.call(*args)
+        rescue => e
+          fail "sync_one error: #{e.message}\nBacktrace: #{e.backtrace.first(5).join("\n")}"
+        end
+      end
 
       described_class.perform_now
 
-      # Debug: check for errors
-      errors = SystemEvent.where(kind: "sync_pull_requests", status: "warning")
-      expect(errors).to be_empty, "Sync errors: #{errors.map(&:message).join(', ')}"
-
       pr.reload
-      expect(pr.last_synced_at).to be_present, "PR was not synced - last_synced_at is nil. PR count: #{PullRequest.count}"
+      expect(pr.last_synced_at).to be_present
       expect(pr.review_state).to eq("approved")
     end
 

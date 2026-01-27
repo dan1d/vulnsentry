@@ -47,9 +47,23 @@ module Ai
       content = data.dig("choices", 0, "message", "content")
       raise Error, "deepseek response missing content" if content.blank?
 
-      JSON.parse(content)
+      JSON.parse(strip_markdown_fences(content))
     rescue JSON::ParserError => e
       raise Error, "deepseek returned invalid JSON: #{e.message}"
     end
+
+    private
+      # LLMs sometimes wrap JSON in markdown code fences despite instructions.
+      # Strip ```json ... ``` or ``` ... ``` wrappers.
+      def strip_markdown_fences(text)
+        text = text.strip
+        if text.start_with?("```")
+          # Remove opening fence (```json or ```)
+          text = text.sub(/\A```\w*\s*\n?/, "")
+          # Remove closing fence
+          text = text.sub(/\n?```\s*\z/, "")
+        end
+        text.strip
+      end
   end
 end
