@@ -120,6 +120,7 @@ jobs:
 
   system-test:
     runs-on: ubuntu-latest
+    if: ${{ hashFiles('test/system/**/*', 'spec/system/**/*') != '' }}
 
     services:
       postgres:
@@ -153,7 +154,15 @@ jobs:
           bundler-cache: true
 
       - name: Run System Tests
-        run: bin/rails db:test:prepare test:system
+        run: |
+          if [ -d "test/system" ]; then
+            bin/rails db:test:prepare test:system
+          elif [ -d "spec/system" ]; then
+            bin/rails db:test:prepare
+            bundle exec rspec spec/system
+          else
+            echo "No system tests found in test/system or spec/system; skipping."
+          fi
 
       - name: Keep screenshots from failed system tests
         uses: actions/upload-artifact@v4
