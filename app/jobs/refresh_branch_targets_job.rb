@@ -25,6 +25,11 @@ class RefreshBranchTargetsJob < ApplicationJob
         ensure_master!
       end
 
+      # Once a branch is detected as EOL, we should not keep generating or surfacing
+      # branch-specific bump candidates for it. Preserve auditability by rejecting
+      # any non-submitted candidates/bundles tied to EOL branches.
+      reject_eol_candidates!
+
       SystemEvent.create!(kind: "branch_refresh", status: "ok", message: "updated branch targets", payload: { count: supported.count }, occurred_at: Time.current)
     rescue Ai::DeepseekClient::Error, Ai::MaintenanceBranchesCrossCheck::MismatchError, RubyLang::MaintenanceBranches::ParseError => e
       # Best practice: warn_and_freeze (do not change branches).
@@ -36,6 +41,22 @@ class RefreshBranchTargetsJob < ApplicationJob
         occurred_at: Time.current
       )
       raise
+    end
+
+    def reject_eol_candidates!
+      now = Time.current
+      eol_ids = BranchTarget.where(maintenance_status: "eol").pluck(:id)
+      return if eol_ids.empty?
+
+      CandidateBump
+        .where(branch_target_id: eol_ids)
+        .where.not(state: "submitted")
+        .update_all(state: "rejected", blocked_reason: "branch is eol", updated_at: now)
+
+      PatchBundle
+        .where(branch_target_id: eol_ids)
+        .where.not(state: "submitted")
+        .update_all(state: "rejected", blocked_reason: "branch is eol", updated_at: now)
     end
 
     def upsert_branches(branches)

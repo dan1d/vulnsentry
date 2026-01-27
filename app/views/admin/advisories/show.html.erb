@@ -23,8 +23,13 @@
       <% end %>
     <% end %>
 
-    <%# Related Candidate Bumps & Pull Requests %>
-    <% bumps = @advisory.candidate_bumps.includes(:pull_request).order(:base_branch) %>
+    <%# Related Candidate Bumps & Pull Requests (supported branches only) %>
+    <% bumps = @advisory.candidate_bumps
+      .joins(:branch_target)
+      .where(branch_targets: { enabled: true })
+      .where.not(branch_targets: { maintenance_status: "eol" })
+      .includes(:pull_request)
+      .order(:base_branch) %>
     <% if bumps.any? %>
       <%= render "shared/box_section", title: "Candidate Bumps (#{bumps.size})" do %>
         <table class="table is-narrow is-fullwidth is-size-7">
