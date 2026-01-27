@@ -1,3 +1,5 @@
+require "ostruct"
+
 module Evaluation
   class PatchBundleBuilder
     def initialize(
@@ -291,7 +293,7 @@ module Evaluation
     end
 
     def build_entry(gem_name, version)
-      OpenStruct.new(name: gem_name, version: version)
+      ::OpenStruct.new(name: gem_name, version: version)
     end
   end
 end
