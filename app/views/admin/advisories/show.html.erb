@@ -20,12 +20,12 @@
 
   <div class="rounded border bg-white p-4 space-y-2">
     <div class="text-sm font-medium">Links</div>
-    <% if @advisory.advisory_url.present? %>
+    <% if (url = safe_http_url(@advisory.advisory_url)) %>
       <div class="text-sm">
-        <%= link_to @advisory.advisory_url, @advisory.advisory_url, target: "_blank", rel: "noopener", class: "text-blue-600 hover:underline" %>
+        <%= link_to url, url, target: "_blank", rel: "noopener", class: "text-blue-600 hover:underline" %>
       </div>
     <% else %>
-      <div class="text-sm text-gray-600">(no advisory_url recorded)</div>
+      <div class="text-sm text-gray-600">(no advisory URL recorded)</div>
     <% end %>
   </div>
 

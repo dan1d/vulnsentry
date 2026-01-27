@@ -23,7 +23,11 @@
                 </div>
 
                 <div class="mt-1 text-lg font-semibold text-gray-900 truncate">
-                  <%= link_to "Bump #{bump.gem_name} to #{bump.target_version} for #{bump.base_branch}", pr.pr_url, target: "_blank", rel: "noopener", class: "hover:underline" %>
+                  <% if (url = safe_http_url(pr.pr_url)) %>
+                    <%= link_to "Bump #{bump.gem_name} to #{bump.target_version} for #{bump.base_branch}", url, target: "_blank", rel: "noopener", class: "hover:underline" %>
+                  <% else %>
+                    Bump <%= bump.gem_name %> to <%= bump.target_version %> for <%= bump.base_branch %>
+                  <% end %>
                 </div>
 
                 <div class="mt-2 text-sm text-gray-700">
@@ -41,9 +45,9 @@
                     <% else %>
                       <span class="text-gray-500">(no CVE recorded)</span>
                     <% end %>
-                    <% if adv.advisory_url.present? %>
+                    <% if (url = safe_http_url(adv.advisory_url)) %>
                       <span class="text-gray-500">—</span>
-                      <%= link_to "advisory", adv.advisory_url, target: "_blank", rel: "noopener", class: "text-[#CC342D] hover:underline" %>
+                      <%= link_to "advisory", url, target: "_blank", rel: "noopener", class: "text-[#CC342D] hover:underline" %>
                     <% end %>
                   </div>
                 <% end %>
