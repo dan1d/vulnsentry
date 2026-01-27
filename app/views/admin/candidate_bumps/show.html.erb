@@ -1,39 +1,36 @@
 <%= render "admin/shared/nav" %>
 
-<div class="mx-auto max-w-4xl px-4 py-6 space-y-6">
-  <div class="flex items-start justify-between gap-6">
-    <div>
-      <h1 class="text-2xl font-semibold">Candidate</h1>
-      <div class="mt-1 text-sm text-gray-600 font-mono">
-        <%= @candidate_bump.base_branch %>: <%= @candidate_bump.gem_name %> <%= @candidate_bump.current_version %> → <%= @candidate_bump.target_version %>
+<section class="section">
+  <div class="container is-max-desktop">
+    <%= render "shared/page_header",
+      title: "Candidate",
+      subtitle: "#{@candidate_bump.base_branch}: #{@candidate_bump.gem_name} #{@candidate_bump.current_version} → #{@candidate_bump.target_version}",
+      back_path: admin_candidate_bumps_path %>
+
+    <div class="content is-small mb-5">
+      <p>state: <%= render "shared/status_tag", status: @candidate_bump.state %></p>
+    </div>
+
+    <%= render "shared/box_section", title: "Proposed diff" do %>
+      <%= render "shared/code_block",
+        content: @candidate_bump.proposed_diff,
+        empty_text: "(not generated yet)" %>
+    <% end %>
+
+    <%= render "shared/box_section", title: "Actions" do %>
+      <div class="buttons">
+        <%= button_to "Approve", admin_candidate_bump_path(@candidate_bump), method: :patch, params: { event: "approve" }, class: "button is-dark" %>
+        <%= button_to "Reject", admin_candidate_bump_path(@candidate_bump), method: :patch, params: { event: "reject", reason: "rejected_by_admin" }, class: "button is-light" %>
+
+        <% if @candidate_bump.state == "approved" %>
+          <%= button_to "Create PR", admin_candidate_bump_path(@candidate_bump), method: :patch, params: { event: "create_pr" }, class: "button is-ruby" %>
+          <%= button_to "Create Draft PR", admin_candidate_bump_path(@candidate_bump), method: :patch, params: { event: "create_draft_pr" }, class: "button is-ruby is-outlined" %>
+        <% end %>
       </div>
-      <div class="mt-1 text-sm text-gray-600">state: <span class="font-mono"><%= @candidate_bump.state %></span></div>
-    </div>
-    <div class="text-sm">
-      <%= link_to "Back", admin_candidate_bumps_path, class: "rounded border px-3 py-2" %>
-    </div>
+
+      <p class="is-size-7 has-text-grey">
+        Two-click safety: Approve first, then Create PR (or Draft PR).
+      </p>
+    <% end %>
   </div>
-
-  <div class="rounded border bg-white p-4 space-y-3">
-    <div class="text-sm font-medium">Proposed diff</div>
-    <pre class="text-xs bg-gray-50 rounded p-3 overflow-auto"><%= @candidate_bump.proposed_diff.presence || "(not generated yet)" %></pre>
-  </div>
-
-  <div class="rounded border bg-white p-4 space-y-3">
-    <div class="text-sm font-medium">Actions</div>
-
-    <div class="flex flex-wrap gap-3 items-center">
-      <%= button_to "Approve", admin_candidate_bump_path(@candidate_bump), method: :patch, params: { event: "approve" }, class: "rounded bg-black px-4 py-2 text-white text-sm" %>
-      <%= button_to "Reject", admin_candidate_bump_path(@candidate_bump), method: :patch, params: { event: "reject", reason: "rejected_by_admin" }, class: "rounded border px-4 py-2 text-sm" %>
-
-      <% if @candidate_bump.state == "approved" %>
-        <%= button_to "Create PR", admin_candidate_bump_path(@candidate_bump), method: :patch, params: { event: "create_pr" }, class: "rounded bg-[#CC342D] px-4 py-2 text-white text-sm hover:opacity-90" %>
-        <%= button_to "Create Draft PR", admin_candidate_bump_path(@candidate_bump), method: :patch, params: { event: "create_draft_pr" }, class: "rounded border border-[#CC342D] px-4 py-2 text-sm text-[#CC342D] hover:bg-[#CC342D]/10" %>
-      <% end %>
-    </div>
-
-    <p class="text-xs text-gray-600">
-      Two-click safety: Approve first, then Create PR (or Draft PR).
-    </p>
-  </div>
-</div>
+</section>

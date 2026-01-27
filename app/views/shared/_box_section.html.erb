@@ -1,0 +1,21 @@
+<%# Box section component with optional title and link
+    Local variables:
+    - title: (optional) Section title
+    - title_link: (optional) Link for the title
+    - compact: (optional) Whether to use compact padding
+    - scrollable: (optional) Whether content should scroll with max height
+    - content: (required) Block content
+%>
+<div class="box<%= ' is-compact' if local_assigns[:compact] %>">
+  <% if local_assigns[:title] %>
+    <div class="is-flex is-justify-content-space-between is-align-items-center mb-4">
+      <p class="has-text-weight-medium"><%= title %></p>
+      <% if local_assigns[:title_link] %>
+        <%= link_to "View all →", title_link, class: "is-size-7" %>
+      <% end %>
+    </div>
+  <% end %>
+  <div class="<%= 'dashboard-list-scroll' if local_assigns[:scrollable] %>">
+    <%= yield %>
+  </div>
+</div>

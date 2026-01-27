@@ -1,0 +1,23 @@
+<%# PR list component for dashboard
+    Local variables:
+    - pull_requests: (required) Collection of PullRequest records
+%>
+<div class="content is-small">
+  <% pull_requests.each do |pr| %>
+    <div class="level is-mobile mb-2">
+      <div class="level-left" style="max-width: 75%;">
+        <div class="level-item has-text-overflow-ellipsis">
+          <%= link_to admin_pull_request_path(pr) do %>
+            <span class="is-family-monospace">#<%= pr.pr_number || "?" %></span>
+            <span class="is-family-monospace"><%= pr.candidate_bump.base_branch %></span>:
+            <%= pr.candidate_bump.gem_name %>
+            <span class="is-family-monospace">→ <%= pr.candidate_bump.target_version %></span>
+          <% end %>
+        </div>
+      </div>
+      <div class="level-right">
+        <span class="has-text-grey is-size-7"><%= pr.created_at.strftime("%Y-%m-%d %H:%M") %></span>
+      </div>
+    </div>
+  <% end %>
+</div>

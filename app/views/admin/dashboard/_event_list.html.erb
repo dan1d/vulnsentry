@@ -1,0 +1,22 @@
+<%# System event list component
+    Local variables:
+    - events: (required) Collection of SystemEvent records
+%>
+<div class="content is-small">
+  <% events.each do |ev| %>
+    <div class="level is-mobile mb-2">
+      <div class="level-left" style="max-width: 70%;">
+        <div class="level-item">
+          <%= link_to ev.kind, admin_system_event_path(ev), class: "is-family-monospace" %>
+          <%= render "shared/status_tag", status: ev.status, size: "small" %>
+        </div>
+      </div>
+      <div class="level-right">
+        <span class="has-text-grey is-size-7"><%= ev.occurred_at.strftime("%Y-%m-%d %H:%M") %></span>
+      </div>
+    </div>
+    <% if ev.message.present? %>
+      <p class="has-text-grey has-text-overflow-ellipsis mb-2" style="max-width: 40ch;"><%= truncate(ev.message, length: 80) %></p>
+    <% end %>
+  <% end %>
+</div>

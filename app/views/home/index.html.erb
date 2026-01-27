@@ -1,73 +1,28 @@
-<div class="space-y-6 w-full">
-  <div class="rounded-xl border bg-white p-5">
-    <h1 class="text-2xl font-semibold text-gray-900">Merged security PRs</h1>
-    <p class="mt-1 text-sm text-gray-600">
-      This dashboard lists merged PRs created by this app (tracked in the database).
-    </p>
+<div class="content">
+  <div class="box">
+    <%= render "shared/page_header",
+      title: "Merged security PRs",
+      subtitle: "This dashboard lists merged PRs created by this app (tracked in the database)." %>
   </div>
 
   <% if @merged_prs.any? %>
-    <div class="rounded-xl border bg-white overflow-hidden">
-      <div class="border-b px-5 py-3 text-sm font-medium text-gray-800">Latest merged PRs</div>
-      <ul class="divide-y">
-        <% @merged_prs.each do |pr| %>
-          <% bump = pr.candidate_bump %>
-          <% adv = bump&.advisory %>
-          <li class="p-5">
-            <div class="flex items-start justify-between gap-4">
-              <div class="min-w-0">
-                <div class="text-sm text-gray-600">
-                  <span class="font-mono">#<%= pr.pr_number %></span>
-                  <span class="ml-2 inline-flex items-center rounded bg-green-100 px-2 py-1 text-xs text-green-800">merged</span>
-                  <span class="ml-2 text-xs text-gray-500"><%= (pr.merged_at || pr.closed_at || pr.updated_at).strftime("%Y-%m-%d") %></span>
-                </div>
-
-                <div class="mt-1 text-lg font-semibold text-gray-900 truncate">
-                  <% if (url = safe_http_url(pr.pr_url)) %>
-                    <%= link_to "Bump #{bump.gem_name} to #{bump.target_version} for #{bump.base_branch}", url, target: "_blank", rel: "noopener", class: "hover:underline" %>
-                  <% else %>
-                    Bump <%= bump.gem_name %> to <%= bump.target_version %> for <%= bump.base_branch %>
-                  <% end %>
-                </div>
-
-                <div class="mt-2 text-sm text-gray-700">
-                  <span class="font-medium">Fix</span>:
-                  <span class="font-mono"><%= bump.gem_name %> <%= bump.current_version %> → <%= bump.target_version %></span>
-                  <span class="text-gray-500">on</span>
-                  <span class="font-mono"><%= bump.base_branch %></span>
-                </div>
-
-                <% if adv %>
-                  <div class="mt-2 text-sm text-gray-700">
-                    <span class="font-medium">Security</span>:
-                    <% if adv.cve.present? %>
-                      <span class="font-mono"><%= adv.cve %></span>
-                    <% else %>
-                      <span class="text-gray-500">(no CVE recorded)</span>
-                    <% end %>
-                    <% if (url = safe_http_url(adv.advisory_url)) %>
-                      <span class="text-gray-500">—</span>
-                      <%= link_to "advisory", url, target: "_blank", rel: "noopener", class: "text-[#CC342D] hover:underline" %>
-                    <% end %>
-                  </div>
-                <% end %>
-              </div>
-            </div>
-          </li>
+    <%= render "shared/box_section", title: "Latest merged PRs" do %>
+      <% @merged_prs.each_with_index do |pr, index| %>
+        <%= render "shared/pr_card", pr: pr %>
+        <% unless index == @merged_prs.size - 1 %>
+          <hr>
         <% end %>
-      </ul>
-    </div>
+      <% end %>
+    <% end %>
+
+    <%= render "shared/pagination", collection: @merged_prs, per_page_options: [5, 10, 25, 50] %>
   <% else %>
-    <div class="rounded-xl border bg-white p-6">
-      <div class="text-sm text-gray-600">
-        No merged PRs tracked yet. When a PR is created and later synced as <span class="font-mono">merged</span>,
-        it will show up here.
-      </div>
-      <div class="mt-4 flex flex-wrap gap-2">
-        <%= link_to "Open admin dashboard", admin_root_path, class: "rounded bg-[#CC342D] px-4 py-2 text-sm text-white hover:opacity-90" %>
-        <%= link_to "View GitHub profile", "https://github.com/dan1d", target: "_blank", rel: "noopener", class: "rounded border px-4 py-2 text-sm" %>
-      </div>
+    <div class="box">
+      <%= render "shared/empty_state",
+        message: "No merged PRs tracked yet. When a PR is created and later synced as merged, it will show up here." do %>
+        <%= link_to "Open admin dashboard", admin_root_path, class: "button is-ruby" %>
+        <%= link_to "View GitHub profile", "https://github.com/dan1d", target: "_blank", rel: "noopener", class: "button is-light" %>
+      <% end %>
     </div>
   <% end %>
 </div>
-

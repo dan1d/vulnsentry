@@ -1,0 +1,10 @@
+<%# Code block component for displaying preformatted content
+    Local variables:
+    - content: (required) The content to display
+    - empty_text: (optional) Text to show when content is empty (default: "(empty)")
+%>
+<% if content.present? %>
+  <pre class="is-code"><%= content %></pre>
+<% else %>
+  <p class="has-text-grey"><%= local_assigns[:empty_text] || "(empty)" %></p>
+<% end %>

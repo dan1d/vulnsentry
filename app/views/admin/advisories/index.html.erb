@@ -1,63 +1,44 @@
 <%= render "admin/shared/nav" %>
 
-<div class="mx-auto max-w-6xl px-4 py-6 space-y-4">
-  <div>
-    <h1 class="text-2xl font-semibold">Advisories</h1>
-    <p class="text-sm text-gray-600">Browse ingested advisories (GHSA/OSV), enriched with ruby-lang when available.</p>
-  </div>
+<section class="section">
+  <div class="container">
+    <%= render "shared/page_header",
+      title: "Advisories",
+      subtitle: "Browse ingested advisories (GHSA/OSV), enriched with ruby-lang when available." %>
 
-  <div class="rounded border bg-white p-4">
-    <%= form_with url: admin_advisories_path, method: :get, local: true do %>
-      <div class="grid grid-cols-1 md:grid-cols-5 gap-3 text-sm">
-        <div class="md:col-span-2">
-          <label class="block font-medium">Search</label>
-          <%= text_field_tag :q, params[:q], placeholder: "fingerprint, URL, CVE, gem...", class: "mt-1 w-full rounded border px-3 py-2" %>
-        </div>
-        <div>
-          <label class="block font-medium">Source</label>
-          <%= select_tag :source, options_for_select(Advisory::SOURCES, params[:source]), include_blank: true, class: "mt-1 w-full rounded border px-3 py-2" %>
-        </div>
-        <div>
-          <label class="block font-medium">Gem</label>
-          <%= text_field_tag :gem_name, params[:gem_name], class: "mt-1 w-full rounded border px-3 py-2" %>
-        </div>
-        <div class="flex items-end gap-2">
-          <%= submit_tag "Filter", class: "rounded bg-black px-4 py-2 text-white" %>
-          <%= link_to "Clear", admin_advisories_path, class: "rounded border px-4 py-2" %>
-        </div>
-      </div>
+    <%= render layout: "shared/filter_form", locals: { url: admin_advisories_path, clear_path: admin_advisories_path } do %>
+      <%= render "shared/filter_field", label: "Search", name: :q, value: params[:q], placeholder: "fingerprint, URL, CVE, gem...", column_class: "column is-4" %>
+      <%= render "shared/filter_field", label: "Source", name: :source, value: params[:source], type: :select, options: Advisory::SOURCES %>
+      <%= render "shared/filter_field", label: "Gem", name: :gem_name, value: params[:gem_name] %>
     <% end %>
-  </div>
 
-  <div class="rounded border bg-white overflow-hidden">
-    <table class="min-w-full text-sm">
-      <thead class="bg-gray-50 text-gray-700">
-        <tr>
-          <th class="px-4 py-2 text-left">Gem</th>
-          <th class="px-4 py-2 text-left">CVE</th>
-          <th class="px-4 py-2 text-left">Source</th>
-          <th class="px-4 py-2 text-left">Fingerprint</th>
-          <th class="px-4 py-2"></th>
-        </tr>
-      </thead>
-      <tbody class="divide-y">
-        <% @advisories.each do |a| %>
+    <div class="box">
+      <table class="table is-fullwidth is-hoverable">
+        <thead>
           <tr>
-            <td class="px-4 py-2"><%= a.gem_name %></td>
-            <td class="px-4 py-2 font-mono"><%= a.cve.presence || "-" %></td>
-            <td class="px-4 py-2"><%= a.source %></td>
-            <td class="px-4 py-2 font-mono truncate max-w-[28rem]"><%= a.fingerprint %></td>
-            <td class="px-4 py-2 text-right">
-              <%= link_to "View", admin_advisory_path(a), class: "text-blue-600 hover:underline" %>
-            </td>
+            <th>Gem</th>
+            <th>CVE</th>
+            <th>Source</th>
+            <th>Fingerprint</th>
+            <th></th>
           </tr>
-        <% end %>
-      </tbody>
-    </table>
-  </div>
+        </thead>
+        <tbody>
+          <% @advisories.each do |a| %>
+            <tr>
+              <td><%= a.gem_name %></td>
+              <td class="is-family-monospace"><%= a.cve.presence || "-" %></td>
+              <td><%= a.source %></td>
+              <td class="is-family-monospace has-text-overflow-ellipsis" style="max-width: 20rem;"><%= a.fingerprint %></td>
+              <td class="has-text-right">
+                <%= link_to "View", admin_advisory_path(a), class: "button is-small is-link is-light" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
 
-  <div class="flex justify-center">
-    <%== pagy_nav(@pagy) if @pagy %>
+    <%= render "shared/pagination", collection: @advisories %>
   </div>
-</div>
-
+</section>

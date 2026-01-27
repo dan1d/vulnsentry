@@ -1,19 +1,30 @@
-<nav class="border-b bg-white">
-  <div class="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-4">
-    <div class="font-semibold">VulnSentry</div>
-    <div class="flex items-center gap-4 text-sm">
-      <div class="flex gap-3">
-        <%= link_to "Dashboard", admin_root_path, class: "hover:underline" %>
-        <%= link_to "Branches", admin_branch_targets_path, class: "hover:underline" %>
-        <%= link_to "Candidates", admin_candidate_bumps_path, class: "hover:underline" %>
-        <%= link_to "Advisories", admin_advisories_path, class: "hover:underline" %>
-        <%= link_to "PRs", admin_pull_requests_path, class: "hover:underline" %>
-        <%= link_to "Settings", admin_settings_path, class: "hover:underline" %>
+<% content_for :skip_main_navbar, true %>
+
+<nav class="navbar is-sticky has-shadow" role="navigation" aria-label="admin navigation">
+  <div class="container">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="<%= root_path %>">
+        <%= image_tag "ruby.svg", alt: "Ruby", style: "height: 24px; width: 24px;" %>
+      </a>
+      <a class="navbar-item has-text-weight-semibold" href="<%= admin_root_path %>">
+        VulnSentry Admin
+      </a>
+    </div>
+
+    <div class="navbar-menu">
+      <div class="navbar-start">
+        <%= link_to "Branches", admin_branch_targets_path, class: "navbar-item" %>
+        <%= link_to "Candidates", admin_candidate_bumps_path, class: "navbar-item" %>
+        <%= link_to "Advisories", admin_advisories_path, class: "navbar-item" %>
+        <%= link_to "PRs", admin_pull_requests_path, class: "navbar-item" %>
+        <%= link_to "Events", admin_system_events_path, class: "navbar-item" %>
+        <%= link_to "Settings", admin_settings_path, class: "navbar-item" %>
       </div>
 
-      <div class="h-5 w-px bg-gray-200"></div>
-
-      <%= button_to "Logout", logout_path, method: :delete, class: "rounded border px-3 py-1.5 hover:bg-gray-50" %>
+      <div class="navbar-end">
+        <%= link_to "Home", root_path, class: "navbar-item" %>
+        <%= button_to "Logout", logout_path, method: :delete, class: "button is-small is-ruby", form: { class: "navbar-item" } %>
+      </div>
     </div>
   </div>
 </nav>

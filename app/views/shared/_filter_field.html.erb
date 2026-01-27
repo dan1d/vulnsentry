@@ -1,0 +1,24 @@
+<%# Filter field component
+    Local variables:
+    - label: (required) Field label
+    - name: (required) Field name
+    - value: (required) Current value (from params)
+    - type: (optional) Field type: text (default), select
+    - options: (optional) Options for select type
+    - placeholder: (optional) Placeholder text
+    - monospace: (optional) Whether to use monospace font
+    - column_class: (optional) Column width class (default: "column")
+%>
+<div class="<%= local_assigns[:column_class] || 'column' %>">
+  <div class="field">
+    <label class="label is-small"><%= label %></label>
+    <div class="control">
+      <% field_class = "input is-small#{' is-family-monospace' if local_assigns[:monospace]}" %>
+      <% if local_assigns[:type] == :select %>
+        <%= select_tag name, options_for_select(options, value), include_blank: true, class: field_class %>
+      <% else %>
+        <%= text_field_tag name, value, class: field_class, placeholder: local_assigns[:placeholder] %>
+      <% end %>
+    </div>
+  </div>
+</div>

@@ -1,32 +1,38 @@
-<div class="mx-auto max-w-md w-full">
-  <div class="rounded-xl border bg-white p-6">
-    <h1 class="text-xl font-semibold text-gray-900">Sign in</h1>
-    <p class="mt-1 text-sm text-gray-600">
-      Admin access is restricted.
-    </p>
+<div class="columns is-centered">
+  <div class="column is-half-tablet is-one-third-desktop">
+    <div class="box">
+      <%= render "shared/page_header",
+        title: "Sign in",
+        subtitle: "Admin access is restricted." %>
 
-    <% if flash[:alert].present? %>
-      <div class="mt-4 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-        <%= flash[:alert] %>
-      </div>
-    <% end %>
+      <% if flash[:alert].present? %>
+        <article class="message is-danger">
+          <div class="message-body">
+            <%= flash[:alert] %>
+          </div>
+        </article>
+      <% end %>
 
-    <%= form_with url: sign_in_path, method: :post, local: true, class: "mt-6 space-y-4" do %>
-      <div>
-        <label class="block text-sm font-medium text-gray-900">Username</label>
-        <%= text_field_tag :username, params[:username], autofocus: true, class: "mt-1 w-full rounded border px-3 py-2" %>
-      </div>
+      <%= form_with url: sign_in_path, method: :post, local: true do %>
+        <div class="field">
+          <label class="label">Username</label>
+          <div class="control">
+            <%= text_field_tag :username, params[:username], autofocus: true, class: "input" %>
+          </div>
+        </div>
 
-      <div>
-        <label class="block text-sm font-medium text-gray-900">Password</label>
-        <%= password_field_tag :password, nil, class: "mt-1 w-full rounded border px-3 py-2" %>
-      </div>
+        <div class="field">
+          <label class="label">Password</label>
+          <div class="control">
+            <%= password_field_tag :password, nil, class: "input" %>
+          </div>
+        </div>
 
-      <div class="flex items-center justify-between">
-        <%= submit_tag "Sign in", class: "rounded bg-[#CC342D] px-4 py-2 text-sm text-white hover:opacity-90" %>
-        <%= link_to "Back", root_path, class: "text-sm text-gray-600 hover:underline" %>
-      </div>
-    <% end %>
+        <div class="field is-grouped">
+          <%= submit_tag "Sign in", class: "button is-ruby" %>
+          <%= link_to "Back", root_path, class: "button is-text" %>
+        </div>
+      <% end %>
+    </div>
   </div>
 </div>
-

@@ -1,62 +1,44 @@
 <%= render "admin/shared/nav" %>
 
-<div class="mx-auto max-w-6xl px-4 py-6 space-y-4">
-  <div>
-    <h1 class="text-2xl font-semibold">Pull requests</h1>
-    <p class="text-sm text-gray-600">PRs created by this app (and tracked in DB).</p>
-  </div>
+<section class="section">
+  <div class="container">
+    <%= render "shared/page_header",
+      title: "Pull requests",
+      subtitle: "PRs created by this app (and tracked in DB)." %>
 
-  <div class="rounded border bg-white p-4">
-    <%= form_with url: admin_pull_requests_path, method: :get, local: true do %>
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
-        <div>
-          <label class="block font-medium">Status</label>
-          <%= select_tag :status, options_for_select(PullRequest::STATUSES, params[:status]), include_blank: true, class: "mt-1 w-full rounded border px-3 py-2" %>
-        </div>
-        <div>
-          <label class="block font-medium">Branch</label>
-          <%= text_field_tag :base_branch, params[:base_branch], class: "mt-1 w-full rounded border px-3 py-2 font-mono" %>
-        </div>
-        <div>
-          <label class="block font-medium">Upstream repo</label>
-          <%= text_field_tag :upstream_repo, params[:upstream_repo], class: "mt-1 w-full rounded border px-3 py-2 font-mono" %>
-        </div>
-        <div class="flex items-end gap-2">
-          <%= submit_tag "Filter", class: "rounded bg-black px-4 py-2 text-white" %>
-          <%= link_to "Clear", admin_pull_requests_path, class: "rounded border px-4 py-2" %>
-        </div>
-      </div>
+    <%= render layout: "shared/filter_form", locals: { url: admin_pull_requests_path, clear_path: admin_pull_requests_path } do %>
+      <%= render "shared/filter_field", label: "Status", name: :status, value: params[:status], type: :select, options: PullRequest::STATUSES %>
+      <%= render "shared/filter_field", label: "Branch", name: :base_branch, value: params[:base_branch], monospace: true %>
+      <%= render "shared/filter_field", label: "Upstream repo", name: :upstream_repo, value: params[:upstream_repo], monospace: true %>
     <% end %>
-  </div>
 
-  <div class="rounded border bg-white overflow-hidden">
-    <table class="min-w-full text-sm">
-      <thead class="bg-gray-50 text-gray-700">
-        <tr>
-          <th class="px-4 py-2 text-left">PR</th>
-          <th class="px-4 py-2 text-left">Branch</th>
-          <th class="px-4 py-2 text-left">Gem</th>
-          <th class="px-4 py-2 text-left">Status</th>
-          <th class="px-4 py-2"></th>
-        </tr>
-      </thead>
-      <tbody class="divide-y">
-        <% @pull_requests.each do |pr| %>
+    <div class="box">
+      <table class="table is-fullwidth is-hoverable">
+        <thead>
           <tr>
-            <td class="px-4 py-2 font-mono"><%= pr.pr_number || "?" %></td>
-            <td class="px-4 py-2 font-mono"><%= pr.candidate_bump.base_branch %></td>
-            <td class="px-4 py-2"><%= pr.candidate_bump.gem_name %> <span class="font-mono">→ <%= pr.candidate_bump.target_version %></span></td>
-            <td class="px-4 py-2"><%= pr.status %></td>
-            <td class="px-4 py-2 text-right">
-              <%= link_to "View", admin_pull_request_path(pr), class: "text-blue-600 hover:underline" %>
-            </td>
+            <th>PR</th>
+            <th>Branch</th>
+            <th>Gem</th>
+            <th>Status</th>
+            <th></th>
           </tr>
-        <% end %>
-      </tbody>
-    </table>
-  </div>
+        </thead>
+        <tbody>
+          <% @pull_requests.each do |pr| %>
+            <tr>
+              <td class="is-family-monospace"><%= pr.pr_number || "?" %></td>
+              <td class="is-family-monospace"><%= pr.candidate_bump.base_branch %></td>
+              <td><%= pr.candidate_bump.gem_name %> <span class="is-family-monospace">→ <%= pr.candidate_bump.target_version %></span></td>
+              <td><%= render "shared/status_tag", status: pr.status, size: "small" %></td>
+              <td class="has-text-right">
+                <%= link_to "View", admin_pull_request_path(pr), class: "button is-small is-link is-light" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
 
-  <div class="flex justify-center">
-    <%== pagy_nav(@pagy) if @pagy %>
+    <%= render "shared/pagination", collection: @pull_requests %>
   </div>
-</div>
+</section>

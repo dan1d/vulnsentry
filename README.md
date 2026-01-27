@@ -22,7 +22,7 @@ export PGHOST=127.0.0.1 PGPORT=5432 PGUSER=postgres PGPASSWORD=
 bin/rails db:prepare
 ```
 
-Run the dev server + Tailwind watcher:
+Run the dev server:
 
 ```bash
 bin/dev

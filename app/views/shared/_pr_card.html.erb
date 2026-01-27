@@ -1,0 +1,52 @@
+<%# Pull request card component
+    Local variables:
+    - pr: (required) The PullRequest object
+    - show_advisory: (optional) Whether to show advisory info (default: true)
+%>
+<% bump = pr.candidate_bump %>
+<% adv = bump&.advisory %>
+<% show_advisory = local_assigns.fetch(:show_advisory, true) %>
+
+<article class="media">
+  <div class="media-content">
+    <div class="content">
+      <p class="mb-2">
+        <span class="is-family-monospace">#<%= pr.pr_number %></span>
+        <%= render "shared/status_tag", status: pr.status, size: "small" %>
+        <span class="has-text-grey is-size-7 ml-2">
+          <%= (pr.merged_at || pr.closed_at || pr.updated_at)&.strftime("%Y-%m-%d") %>
+        </span>
+      </p>
+
+      <p class="is-size-5 has-text-weight-semibold mb-2">
+        <% if (url = safe_http_url(pr.pr_url)) %>
+          <%= link_to "Bump #{bump.gem_name} to #{bump.target_version} for #{bump.base_branch}", url, target: "_blank", rel: "noopener" %>
+        <% else %>
+          Bump <%= bump.gem_name %> to <%= bump.target_version %> for <%= bump.base_branch %>
+        <% end %>
+      </p>
+
+      <p class="mb-1">
+        <strong>Fix</strong>:
+        <span class="is-family-monospace"><%= bump.gem_name %> <%= bump.current_version %> → <%= bump.target_version %></span>
+        <span class="has-text-grey">on</span>
+        <span class="is-family-monospace"><%= bump.base_branch %></span>
+      </p>
+
+      <% if show_advisory && adv %>
+        <p>
+          <strong>Security</strong>:
+          <% if adv.cve.present? %>
+            <span class="is-family-monospace"><%= adv.cve %></span>
+          <% else %>
+            <span class="has-text-grey">(no CVE recorded)</span>
+          <% end %>
+          <% if (url = safe_http_url(adv.advisory_url)) %>
+            <span class="has-text-grey">—</span>
+            <%= link_to "advisory", url, target: "_blank", rel: "noopener", class: "is-ruby" %>
+          <% end %>
+        </p>
+      <% end %>
+    </div>
+  </div>
+</article>

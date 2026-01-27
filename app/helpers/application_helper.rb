@@ -1,6 +1,4 @@
 module ApplicationHelper
-  include PagyHelper
-
   # Brakeman warns when model-provided strings are used directly as hrefs.
   # Only allow http(s) URLs to prevent `javascript:` / `data:` style injection.
   def safe_http_url(url)

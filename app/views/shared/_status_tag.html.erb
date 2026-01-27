@@ -1,0 +1,39 @@
+<%# Status tag component
+    Local variables:
+    - status: (required) The status value
+    - size: (optional) Tag size (small, medium, normal) - default: normal
+    - text: (optional) Custom text (default: uses status value)
+%>
+<%
+  tag_class = case status.to_s.downcase
+  # Success states
+  when "ok", "success", "merged", "true", "approved", "submitted"
+    "is-success"
+  # Warning states
+  when "warning", "pending", "ready_for_review"
+    "is-warning"
+  # Danger states
+  when "error", "danger", "failed", "false", "rejected"
+    "is-danger"
+  # Info states
+  when "info", "open", "draft"
+    "is-info"
+  # Blocked/rate limited states
+  when "blocked_rate_limited", "blocked_ambiguous", "blocked"
+    "is-dark"
+  # Closed/inactive
+  when "closed"
+    "is-dark"
+  else
+    "is-light"
+  end
+
+  size_class = case local_assigns[:size]
+  when "small" then "is-small"
+  when "medium" then "is-medium"
+  else ""
+  end
+%>
+<span class="tag <%= tag_class %> <%= size_class %>">
+  <%= local_assigns[:text] || status %>
+</span>

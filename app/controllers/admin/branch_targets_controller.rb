@@ -1,7 +1,8 @@
 class Admin::BranchTargetsController < Admin::BaseController
   def index
+    per_page = (params[:per_page].presence || 20).to_i.clamp(10, 100)
     query = AdminQueries::BranchTargetsQuery.new.call(params)
-    @pagy, @branch_targets = pagy(query)
+    @branch_targets = query.page(params[:page]).per(per_page)
   end
 
   def edit

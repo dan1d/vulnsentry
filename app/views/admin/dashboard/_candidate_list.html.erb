@@ -1,0 +1,23 @@
+<%# Candidate list component
+    Local variables:
+    - candidates: (required) Collection of CandidateBump records
+%>
+<div class="content is-small">
+  <% candidates.each do |c| %>
+    <div class="level is-mobile mb-2">
+      <div class="level-left" style="max-width: 75%;">
+        <div class="level-item has-text-overflow-ellipsis">
+          <%= link_to admin_candidate_bump_path(c) do %>
+            <span class="is-family-monospace"><%= c.base_branch %></span>:
+            <%= c.gem_name %>
+            <span class="is-family-monospace"><%= c.current_version %> → <%= c.target_version %></span>
+          <% end %>
+          <span class="has-text-grey ml-2">(<%= c.state %>)</span>
+        </div>
+      </div>
+      <div class="level-right">
+        <span class="has-text-grey is-size-7"><%= c.created_at.strftime("%Y-%m-%d %H:%M") %></span>
+      </div>
+    </div>
+  <% end %>
+</div>

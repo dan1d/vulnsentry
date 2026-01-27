@@ -1,62 +1,44 @@
 <%= render "admin/shared/nav" %>
 
-<div class="mx-auto max-w-6xl px-4 py-6 space-y-4">
-  <div>
-    <h1 class="text-2xl font-semibold">Candidate bumps</h1>
-    <p class="text-sm text-gray-600">Review and approve before creating any PR.</p>
-  </div>
+<section class="section">
+  <div class="container">
+    <%= render "shared/page_header",
+      title: "Candidate bumps",
+      subtitle: "Review and approve before creating any PR." %>
 
-  <div class="rounded border bg-white p-4">
-    <%= form_with url: admin_candidate_bumps_path, method: :get, local: true do |f| %>
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
-        <div>
-          <label class="block font-medium">State</label>
-          <%= select_tag :state, options_for_select(CandidateBump::STATES, params[:state]), include_blank: true, class: "mt-1 w-full rounded border px-3 py-2" %>
-        </div>
-        <div>
-          <label class="block font-medium">Branch</label>
-          <%= text_field_tag :base_branch, params[:base_branch], class: "mt-1 w-full rounded border px-3 py-2 font-mono" %>
-        </div>
-        <div>
-          <label class="block font-medium">Gem</label>
-          <%= text_field_tag :gem_name, params[:gem_name], class: "mt-1 w-full rounded border px-3 py-2" %>
-        </div>
-        <div class="flex items-end gap-2">
-          <%= submit_tag "Filter", class: "rounded bg-black px-4 py-2 text-white" %>
-          <%= link_to "Clear", admin_candidate_bumps_path, class: "rounded border px-4 py-2" %>
-        </div>
-      </div>
+    <%= render layout: "shared/filter_form", locals: { url: admin_candidate_bumps_path, clear_path: admin_candidate_bumps_path } do %>
+      <%= render "shared/filter_field", label: "State", name: :state, value: params[:state], type: :select, options: CandidateBump::STATES %>
+      <%= render "shared/filter_field", label: "Branch", name: :base_branch, value: params[:base_branch], monospace: true %>
+      <%= render "shared/filter_field", label: "Gem", name: :gem_name, value: params[:gem_name] %>
     <% end %>
-  </div>
 
-  <div class="rounded border bg-white overflow-hidden">
-    <table class="min-w-full text-sm">
-      <thead class="bg-gray-50 text-gray-700">
-        <tr>
-          <th class="px-4 py-2 text-left">Branch</th>
-          <th class="px-4 py-2 text-left">Gem</th>
-          <th class="px-4 py-2 text-left">Bump</th>
-          <th class="px-4 py-2 text-left">State</th>
-          <th class="px-4 py-2"></th>
-        </tr>
-      </thead>
-      <tbody class="divide-y">
-        <% @candidate_bumps.each do |c| %>
+    <div class="box">
+      <table class="table is-fullwidth is-hoverable">
+        <thead>
           <tr>
-            <td class="px-4 py-2 font-mono"><%= c.base_branch %></td>
-            <td class="px-4 py-2"><%= c.gem_name %></td>
-            <td class="px-4 py-2 font-mono"><%= c.current_version %> → <%= c.target_version %></td>
-            <td class="px-4 py-2"><%= c.state %></td>
-            <td class="px-4 py-2 text-right">
-              <%= link_to "View", admin_candidate_bump_path(c), class: "text-blue-600 hover:underline" %>
-            </td>
+            <th>Branch</th>
+            <th>Gem</th>
+            <th>Bump</th>
+            <th>State</th>
+            <th></th>
           </tr>
-        <% end %>
-      </tbody>
-    </table>
-  </div>
+        </thead>
+        <tbody>
+          <% @candidate_bumps.each do |c| %>
+            <tr>
+              <td class="is-family-monospace"><%= c.base_branch %></td>
+              <td><%= c.gem_name %></td>
+              <td class="is-family-monospace"><%= c.current_version %> → <%= c.target_version %></td>
+              <td><%= render "shared/status_tag", status: c.state, size: "small" %></td>
+              <td class="has-text-right">
+                <%= link_to "View", admin_candidate_bump_path(c), class: "button is-small is-link is-light" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
 
-  <div class="flex justify-center">
-    <%== pagy_nav(@pagy) if @pagy %>
+    <%= render "shared/pagination", collection: @candidate_bumps %>
   </div>
-</div>
+</section>

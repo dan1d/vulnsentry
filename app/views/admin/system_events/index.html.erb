@@ -1,37 +1,44 @@
 <%= render "admin/shared/nav" %>
 
-<div class="mx-auto max-w-6xl px-4 py-6 space-y-4">
-  <div class="flex items-start justify-between gap-6">
-    <div>
-      <h1 class="text-2xl font-semibold">System events</h1>
-      <p class="text-sm text-gray-600">Recent app events, warnings, and failures.</p>
-    </div>
-  </div>
+<section class="section">
+  <div class="container">
+    <%= render "shared/page_header",
+      title: "System events",
+      subtitle: "Recent app events, warnings, and failures." %>
 
-  <div class="rounded border bg-white">
-    <div class="border-b px-4 py-3 font-medium">Latest</div>
-    <div class="p-4">
+    <div class="box">
       <% if @events.any? %>
-        <ul class="space-y-2 text-sm">
-          <% @events.each do |ev| %>
-            <li class="flex items-start justify-between gap-4">
-              <div class="min-w-0">
-                <div class="flex items-center gap-2">
-                  <%= link_to ev.kind, admin_system_event_path(ev), class: "font-mono hover:underline" %>
-                  <span class="inline-flex items-center rounded px-2 py-1 text-xs <%= ev.status == "ok" ? "bg-green-100 text-green-800" : (ev.status == "warning" ? "bg-yellow-100 text-yellow-800" : "bg-red-100 text-red-800") %>"><%= ev.status %></span>
-                </div>
-                <% if ev.message.present? %>
-                  <div class="text-gray-600 truncate max-w-[60ch]"><%= ev.message %></div>
-                <% end %>
-              </div>
-              <div class="text-xs text-gray-500 whitespace-nowrap"><%= ev.occurred_at.strftime("%Y-%m-%d %H:%M") %></div>
-            </li>
-          <% end %>
-        </ul>
+        <table class="table is-fullwidth is-hoverable">
+          <thead>
+            <tr>
+              <th>Kind</th>
+              <th>Status</th>
+              <th>Message</th>
+              <th>Time</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @events.each do |ev| %>
+              <tr>
+                <td class="is-family-monospace"><%= ev.kind %></td>
+                <td><%= render "shared/status_tag", status: ev.status, size: "small" %></td>
+                <td class="has-text-overflow-ellipsis" style="max-width: 30rem;">
+                  <%= truncate(ev.message.to_s, length: 80) %>
+                </td>
+                <td class="has-text-grey is-size-7"><%= ev.occurred_at.strftime("%Y-%m-%d %H:%M") %></td>
+                <td class="has-text-right">
+                  <%= link_to "View", admin_system_event_path(ev), class: "button is-small is-link is-light" %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
       <% else %>
-        <div class="text-sm text-gray-600">No events yet.</div>
+        <%= render "shared/empty_state", message: "No events yet." %>
       <% end %>
     </div>
-  </div>
-</div>
 
+    <%= render "shared/pagination", collection: @events %>
+  </div>
+</section>

@@ -1,7 +1,8 @@
 class Admin::CandidateBumpsController < Admin::BaseController
   def index
+    per_page = (params[:per_page].presence || 20).to_i.clamp(10, 100)
     query = AdminQueries::CandidateBumpsQuery.new.call(params)
-    @pagy, @candidate_bumps = pagy(query)
+    @candidate_bumps = query.page(params[:page]).per(per_page)
   end
 
   def show

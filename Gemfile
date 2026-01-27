@@ -4,16 +4,14 @@ source "https://rubygems.org"
 gem "rails", "~> 8.1.2"
 # The modern asset pipeline for Rails [https://github.com/rails/propshaft]
 gem "propshaft"
-# Tailwind CSS (Rails-native, no Node required)
-gem "tailwindcss-rails"
 # Use PostgreSQL as the database for Active Record
 gem "pg", ">= 1.5"
 # HTML parsing (best practice for ruby-lang pages)
 gem "nokogiri"
 # RSS parsing (explicit dependency for consistent deploys)
 gem "rss"
-# Pagination for admin dashboard
-gem "pagy"
+# Pagination
+gem "kaminari"
 # Use the Puma web server [https://github.com/puma/puma]
 gem "puma", ">= 5.0"
 # Use JavaScript with ESM import maps [https://github.com/rails/importmap-rails]

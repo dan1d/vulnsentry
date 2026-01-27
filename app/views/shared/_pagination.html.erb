@@ -1,0 +1,52 @@
+<%# Kaminari pagination component with per_page selector
+    Local variables:
+    - collection: (required) The paginated collection
+    - per_page_options: (optional) Array of per_page options (default: [10, 20, 50, 100])
+%>
+<% per_page_options ||= [10, 20, 50, 100] %>
+<% current_per_page = params[:per_page].present? ? params[:per_page].to_i : collection.limit_value %>
+
+<div class="level mt-5">
+  <div class="level-left">
+    <div class="level-item">
+      <span class="is-size-7 has-text-grey">
+        Showing <%= collection.offset_value + 1 %>-<%= [collection.offset_value + collection.length, collection.total_count].min %>
+        of <%= collection.total_count %>
+      </span>
+    </div>
+  </div>
+
+  <div class="level-item">
+    <% if collection.total_pages > 1 %>
+      <%= paginate collection %>
+    <% end %>
+  </div>
+
+  <div class="level-right">
+    <div class="level-item">
+      <div class="field has-addons">
+        <p class="control">
+          <span class="button is-small is-static">Per page</span>
+        </p>
+        <p class="control">
+          <span class="select is-small">
+            <select onchange="updatePerPage(this.value)">
+              <% per_page_options.each do |option| %>
+                <option value="<%= option %>" <%= 'selected' if current_per_page == option %>><%= option %></option>
+              <% end %>
+            </select>
+          </span>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function updatePerPage(value) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('per_page', value);
+    url.searchParams.delete('page');
+    window.location.href = url.toString();
+  }
+</script>

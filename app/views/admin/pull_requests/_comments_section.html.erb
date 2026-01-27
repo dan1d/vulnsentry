@@ -1,0 +1,35 @@
+<%# Comments section component
+    Local variables:
+    - title: (required) Section title
+    - comments: (required) Array of comment objects
+    - type: (required) Comment type (:issue, :review, :inline)
+%>
+<div class="mt-5">
+  <p class="has-text-weight-medium mb-3"><%= title %></p>
+  <% if comments.empty? %>
+    <p class="has-text-grey">(none)</p>
+  <% else %>
+    <% comments.last(20).each do |c| %>
+      <div class="box is-compact mb-3">
+        <p class="is-size-7 has-text-grey is-family-monospace mb-2">
+          <% case type %>
+          <% when :issue %>
+            <%= c["created_at"] %> · <%= c["user"] || "?" %>
+          <% when :review %>
+            <%= c["submitted_at"] %> · <%= c["user"] || "?" %> · <%= c["state"] %>
+          <% when :inline %>
+            <%= c["created_at"] %> · <%= c["user"] || "?" %> · <%= c["path"] %>:<%= c["line"] || c["position"] %>
+          <% end %>
+          <% url = c["url"] %>
+          <% if url.present? %>
+            · <%= link_to "view", url, class: "has-text-link", target: "_blank", rel: "noopener" %>
+          <% end %>
+        </p>
+        <% body = type == :review ? c["body"] : c["body"] %>
+        <% if body.present? %>
+          <%= render "shared/code_block", content: truncate(body.to_s, length: 1200) %>
+        <% end %>
+      </div>
+    <% end %>
+  <% end %>
+</div>

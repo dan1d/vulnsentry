@@ -1,0 +1,22 @@
+<%# Filter form wrapper component
+    Local variables:
+    - url: (required) Form action URL
+    - clear_path: (required) Path for clear button
+    - content: (required) Block with form fields
+%>
+<div class="box mb-5">
+  <%= form_with url: url, method: :get, local: true do %>
+    <div class="columns is-multiline is-vcentered">
+      <%= yield %>
+      <div class="column is-narrow">
+        <div class="field">
+          <label class="label is-small">&nbsp;</label>
+          <div class="buttons">
+            <%= submit_tag "Filter", class: "button is-dark is-small" %>
+            <%= link_to "Clear", clear_path, class: "button is-light is-small" %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>

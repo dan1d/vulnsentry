@@ -1,37 +1,30 @@
 <%= render "admin/shared/nav" %>
 
-<div class="mx-auto max-w-4xl px-4 py-6 space-y-6">
-  <div class="flex items-start justify-between gap-6">
-    <div>
-      <h1 class="text-2xl font-semibold">Advisory</h1>
-      <div class="mt-1 text-sm text-gray-600">
-        <span class="font-mono"><%= @advisory.fingerprint %></span>
-      </div>
-      <div class="mt-1 text-sm text-gray-600">
-        gem: <span class="font-mono"><%= @advisory.gem_name %></span>
-        · source: <span class="font-mono"><%= @advisory.source %></span>
-        · cve: <span class="font-mono"><%= @advisory.cve.presence || "-" %></span>
-      </div>
-    </div>
-    <div class="text-sm">
-      <%= link_to "Back", admin_advisories_path, class: "rounded border px-3 py-2" %>
-    </div>
-  </div>
+<section class="section">
+  <div class="container is-max-desktop">
+    <%= render "shared/page_header",
+      title: "Advisory",
+      subtitle: @advisory.fingerprint,
+      back_path: admin_advisories_path %>
 
-  <div class="rounded border bg-white p-4 space-y-2">
-    <div class="text-sm font-medium">Links</div>
-    <% if (url = safe_http_url(@advisory.advisory_url)) %>
-      <div class="text-sm">
-        <%= link_to url, url, target: "_blank", rel: "noopener", class: "text-blue-600 hover:underline" %>
-      </div>
-    <% else %>
-      <div class="text-sm text-gray-600">(no advisory URL recorded)</div>
+    <div class="content is-small mb-5">
+      <p>
+        gem: <span class="is-family-monospace"><%= @advisory.gem_name %></span>
+        · source: <span class="is-family-monospace"><%= @advisory.source %></span>
+        · cve: <span class="is-family-monospace"><%= @advisory.cve.presence || "-" %></span>
+      </p>
+    </div>
+
+    <%= render "shared/box_section", title: "Links" do %>
+      <% if (url = safe_http_url(@advisory.advisory_url)) %>
+        <p><%= link_to url, url, target: "_blank", rel: "noopener", class: "has-text-link" %></p>
+      <% else %>
+        <p class="has-text-grey">(no advisory URL recorded)</p>
+      <% end %>
+    <% end %>
+
+    <%= render "shared/box_section", title: "Raw payload" do %>
+      <%= render "shared/code_block", content: JSON.pretty_generate(@advisory.raw || {}) %>
     <% end %>
   </div>
-
-  <div class="rounded border bg-white p-4 space-y-2">
-    <div class="text-sm font-medium">Raw payload</div>
-    <pre class="text-xs bg-gray-50 rounded p-3 overflow-auto"><%= JSON.pretty_generate(@advisory.raw || {}) %></pre>
-  </div>
-</div>
-
+</section>

@@ -1,0 +1,14 @@
+<%# Empty state component
+    Local variables:
+    - message: (required) The empty state message
+    - icon: (optional) Icon class (not implemented yet, placeholder)
+    - actions: (optional) Block for action buttons
+%>
+<div class="has-text-centered py-6">
+  <p class="has-text-grey mb-4"><%= message %></p>
+  <% if local_assigns[:actions] %>
+    <div class="buttons is-centered">
+      <%= actions %>
+    </div>
+  <% end %>
+</div>

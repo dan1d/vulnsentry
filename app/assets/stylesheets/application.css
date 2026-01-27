@@ -1,10 +1,458 @@
 /*
- * This is a manifest file that'll be compiled into application.css.
- *
- * With Propshaft, assets are served efficiently without preprocessing steps. You can still include
- * application-wide styles in this file, but keep in mind that CSS precedence will follow the standard
- * cascading order, meaning styles declared later in the document or manifest will override earlier ones,
- * depending on specificity.
- *
- * Consider organizing styles into separate files for maintainability.
+ * VulnSentry - Dark Theme with Ruby Red Accents
+ * Primary color: #CC342D (Ruby red)
+ * Background: #1a1a2e / #16213e
  */
+
+/* ========================================
+   CSS Variables for Dark Theme
+   ======================================== */
+:root {
+  --ruby-red: #CC342D;
+  --ruby-red-light: #e05650;
+  --ruby-red-dark: #a12a24;
+  --ruby-red-bg: rgba(204, 52, 45, 0.15);
+
+  --bg-primary: #0f0f1a;
+  --bg-secondary: #1a1a2e;
+  --bg-tertiary: #252542;
+  --bg-card: #1e1e32;
+
+  --text-primary: #e8e8f0;
+  --text-secondary: #a0a0b8;
+  --text-muted: #6b6b85;
+
+  --border-color: #2d2d4a;
+  --border-light: #3d3d5c;
+
+  --success: #48c774;
+  --warning: #ffdd57;
+  --danger: #f14668;
+  --info: #3e8ed0;
+}
+
+/* ========================================
+   Global Dark Theme
+   ======================================== */
+html {
+  background-color: var(--bg-primary);
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* ========================================
+   Bulma Overrides - Dark Theme
+   ======================================== */
+
+/* Navbar */
+.navbar {
+  background-color: var(--bg-secondary) !important;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.navbar-item,
+.navbar-link {
+  color: var(--text-primary) !important;
+}
+
+.navbar-item:hover,
+.navbar-link:hover {
+  background-color: var(--bg-tertiary) !important;
+  color: var(--ruby-red-light) !important;
+}
+
+.navbar-menu {
+  background-color: var(--bg-secondary);
+}
+
+/* Section */
+.section {
+  background-color: var(--bg-primary);
+}
+
+/* Box */
+.box {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.box.is-compact {
+  padding: 1rem;
+}
+
+/* Titles and Text */
+.title {
+  color: var(--text-primary) !important;
+}
+
+.subtitle {
+  color: var(--text-secondary) !important;
+}
+
+.heading {
+  color: var(--text-muted);
+}
+
+.has-text-grey {
+  color: var(--text-secondary) !important;
+}
+
+.has-text-weight-medium,
+.has-text-weight-semibold {
+  color: var(--text-primary);
+}
+
+/* Links */
+a {
+  color: var(--ruby-red-light);
+}
+
+a:hover {
+  color: var(--ruby-red);
+}
+
+.has-text-link {
+  color: var(--ruby-red-light) !important;
+}
+
+/* Tables */
+.table {
+  background-color: transparent;
+  color: var(--text-primary);
+}
+
+.table th {
+  color: var(--text-secondary) !important;
+  border-color: var(--border-color) !important;
+  background-color: var(--bg-tertiary);
+}
+
+.table td {
+  border-color: var(--border-color) !important;
+}
+
+.table tbody tr:hover {
+  background-color: var(--bg-tertiary);
+}
+
+.table.is-hoverable tbody tr:not(.is-selected):hover {
+  background-color: var(--bg-tertiary) !important;
+}
+
+/* Forms */
+.input,
+.textarea,
+.select select {
+  background-color: var(--bg-tertiary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.input:focus,
+.textarea:focus,
+.select select:focus {
+  border-color: var(--ruby-red);
+  box-shadow: 0 0 0 2px var(--ruby-red-bg);
+}
+
+.label {
+  color: var(--text-primary);
+}
+
+.checkbox {
+  color: var(--text-primary);
+}
+
+/* Buttons */
+.button {
+  border-color: var(--border-color);
+}
+
+.button.is-light {
+  background-color: var(--bg-tertiary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.button.is-light:hover {
+  background-color: var(--border-light);
+  border-color: var(--border-light);
+  color: var(--text-primary);
+}
+
+.button.is-dark {
+  background-color: var(--text-primary);
+  color: var(--bg-primary);
+}
+
+.button.is-text {
+  color: var(--text-secondary);
+}
+
+.button.is-text:hover {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.button.is-link.is-light {
+  background-color: var(--ruby-red-bg);
+  color: var(--ruby-red-light);
+}
+
+.button.is-link.is-light:hover {
+  background-color: var(--ruby-red);
+  color: #fff;
+}
+
+/* Ruby red button */
+.button.is-ruby {
+  background-color: var(--ruby-red);
+  border-color: transparent;
+  color: #fff;
+}
+
+.button.is-ruby:hover,
+.button.is-ruby:focus {
+  background-color: var(--ruby-red-dark);
+  border-color: transparent;
+  color: #fff;
+}
+
+.button.is-ruby.is-outlined {
+  background-color: transparent;
+  border-color: var(--ruby-red);
+  color: var(--ruby-red);
+}
+
+.button.is-ruby.is-outlined:hover,
+.button.is-ruby.is-outlined:focus {
+  background-color: var(--ruby-red);
+  color: #fff;
+}
+
+/* Tags */
+.tag {
+  font-weight: 500;
+}
+
+.tag.is-light {
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.tag.is-success {
+  background-color: rgba(72, 199, 116, 0.2);
+  color: #48c774;
+}
+
+.tag.is-warning {
+  background-color: rgba(255, 221, 87, 0.2);
+  color: #ffdd57;
+}
+
+.tag.is-danger {
+  background-color: rgba(241, 70, 104, 0.2);
+  color: #f14668;
+}
+
+.tag.is-info {
+  background-color: rgba(62, 142, 208, 0.2);
+  color: #3e8ed0;
+}
+
+.tag.is-dark {
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.tag.is-ruby {
+  background-color: var(--ruby-red-bg);
+  color: var(--ruby-red);
+}
+
+/* Messages */
+.message.is-danger {
+  background-color: rgba(241, 70, 104, 0.1);
+}
+
+.message.is-danger .message-body {
+  border-color: var(--danger);
+  color: #f14668;
+}
+
+.message.is-success .message-body {
+  border-color: var(--success);
+  color: #48c774;
+}
+
+/* Media */
+.media + .media {
+  border-top-color: var(--border-color);
+}
+
+/* Level */
+.level-item .tag {
+  margin-left: 0.5rem;
+}
+
+/* Pagination */
+.pagination-link,
+.pagination-previous,
+.pagination-next {
+  background-color: var(--bg-tertiary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.pagination-link:hover,
+.pagination-previous:hover,
+.pagination-next:hover {
+  border-color: var(--ruby-red);
+  color: var(--ruby-red);
+}
+
+.pagination-link.is-current {
+  background-color: var(--ruby-red);
+  border-color: var(--ruby-red);
+  color: #fff;
+}
+
+.pagination-ellipsis {
+  color: var(--text-muted);
+}
+
+/* ========================================
+   Code Blocks
+   ======================================== */
+pre.is-code {
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 1rem;
+  overflow: auto;
+  font-size: 0.75rem;
+  color: var(--text-primary);
+}
+
+code {
+  background-color: var(--bg-tertiary);
+  color: var(--ruby-red-light);
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+}
+
+/* ========================================
+   Utility Classes
+   ======================================== */
+.is-family-monospace {
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace !important;
+}
+
+.has-text-overflow-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Ruby red link */
+a.is-ruby {
+  color: var(--ruby-red);
+}
+
+a.is-ruby:hover {
+  color: var(--ruby-red-light);
+}
+
+/* ========================================
+   Navbar Sticky
+   ======================================== */
+.navbar.is-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+/* Remove body margin/padding for flush navbar */
+body {
+  margin: 0;
+  padding: 0;
+}
+
+/* Section adjustments for admin pages with sticky nav */
+.navbar.is-sticky + .section {
+  padding-top: 2rem;
+}
+
+/* ========================================
+   Table Improvements
+   ======================================== */
+.table td,
+.table th {
+  vertical-align: middle;
+}
+
+/* ========================================
+   Content Links
+   ======================================== */
+.content a {
+  color: var(--ruby-red-light);
+}
+
+.content a:hover {
+  color: var(--ruby-red);
+}
+
+.subtitle a {
+  color: inherit;
+}
+
+.subtitle a:hover {
+  text-decoration: underline;
+}
+
+/* ========================================
+   Dashboard List Scroll
+   ======================================== */
+.dashboard-list-scroll {
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+/* ========================================
+   HR Divider
+   ======================================== */
+hr {
+  background-color: var(--border-color);
+  height: 1px;
+}
+
+/* ========================================
+   Scrollbar (Webkit)
+   ======================================== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-light);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}

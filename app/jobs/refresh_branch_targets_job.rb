@@ -41,6 +41,8 @@ class RefreshBranchTargetsJob < ApplicationJob
       source_url = RubyLang::MaintenanceBranches::URL
       now = Time.current
 
+      seen_names = branches.map { |b| "ruby_#{b.series.tr('.', '_')}" }
+
       branches.each do |branch|
         name = "ruby_#{branch.series.tr('.', '_')}"
         row = BranchTarget.find_or_initialize_by(name: name)
@@ -49,6 +51,22 @@ class RefreshBranchTargetsJob < ApplicationJob
         row.last_seen_at = now
         row.last_checked_at = now
         row.enabled = branch.status != "eol"
+        row.save!
+      end
+
+      # Mark branches no longer on ruby-lang.org as EOL (excludes master).
+      mark_unseen_as_eol!(seen_names, now)
+    end
+
+    def mark_unseen_as_eol!(seen_names, now)
+      stale = BranchTarget
+        .where.not(name: seen_names + ["master"])
+        .where.not(maintenance_status: "eol")
+
+      stale.find_each do |row|
+        row.maintenance_status = "eol"
+        row.enabled = false
+        row.last_checked_at = now
         row.save!
       end
     end

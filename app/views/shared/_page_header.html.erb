@@ -1,0 +1,34 @@
+<%# Page header component
+    Local variables:
+    - title: (required) The page title
+    - subtitle: (optional) Subtitle text
+    - back_path: (optional) Path for back button
+    - back_text: (optional) Text for back button (default: "Back")
+    - actions: (optional) Block for additional action buttons
+%>
+<nav class="level mb-5">
+  <div class="level-left">
+    <div class="level-item">
+      <div>
+        <h1 class="title is-4"><%= title %></h1>
+        <% if local_assigns[:subtitle] %>
+          <p class="subtitle is-6 has-text-grey"><%= subtitle %></p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+  <% if local_assigns[:back_path] || local_assigns[:actions] %>
+    <div class="level-right">
+      <div class="level-item">
+        <div class="buttons">
+          <% if local_assigns[:actions] %>
+            <%= actions %>
+          <% end %>
+          <% if local_assigns[:back_path] %>
+            <%= link_to (local_assigns[:back_text] || "Back"), back_path, class: "button is-light" %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</nav>
