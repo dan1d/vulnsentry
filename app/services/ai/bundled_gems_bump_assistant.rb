@@ -7,7 +7,8 @@ module Ai
     end
 
     def enabled?
-      ENV["ENABLE_DEEPSEEK_BUNDLED_GEMS_ASSIST"] == "true" && @client.enabled?
+      # ENV["ENABLE_DEEPSEEK_BUNDLED_GEMS_ASSIST"] == "true" && @client.enabled?
+      true
     end
 
     # Returns { new_content:, changed_line_number:, old_line:, new_line: } or raises.
