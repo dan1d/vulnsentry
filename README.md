@@ -10,7 +10,7 @@ PR creation is designed to be conservative and **human-gated**.
 - **Ruby**: `3.4.7` (see `.ruby-version`)
 - **PostgreSQL**: required for development/test/production
 - **Docker**: optional (handy for running Postgres locally)
-- **GitHub CLI (`gh`)**: required for GHSA ingestion and PR syncing (and later PR creation)
+- **GitHub CLI (`gh`)**: required for GHSA ingestion and PR syncing (and later PR creation). Use the **latest stable**.
 
 ## Setup (local)
 
@@ -20,6 +20,13 @@ Install gems and prepare the DB:
 bin/setup
 export PGHOST=127.0.0.1 PGPORT=5432 PGUSER=postgres PGPASSWORD=
 bin/rails db:prepare
+```
+
+Install/upgrade GitHub CLI (local):
+
+```bash
+brew install gh
+brew upgrade gh
 ```
 
 Run the dev server:

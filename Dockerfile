@@ -16,7 +16,15 @@ WORKDIR /rails
 
 # Install base packages
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y ca-certificates curl git openssh-client gh libjemalloc2 libvips libpq5 && \
+    apt-get install --no-install-recommends -y ca-certificates curl gpg git openssh-client libjemalloc2 libvips libpq5 && \
+    # Install GitHub CLI from GitHub's official apt repo (latest stable),
+    # instead of Debian's packaged version (often behind).
+    mkdir -p /etc/apt/keyrings && \
+    curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/etc/apt/keyrings/githubcli-archive-keyring.gpg && \
+    chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list && \
+    apt-get update -qq && \
+    apt-get install --no-install-recommends -y gh && \
     ln -s /usr/lib/$(uname -m)-linux-gnu/libjemalloc.so.2 /usr/local/lib/libjemalloc.so && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 

@@ -115,8 +115,8 @@ RSpec.describe Evaluation::PatchBundleBuilder do
     context "when resolution fails with an error" do
       before do
         allow(ruby_lang_resolver).to receive(:resolve_fixed_version).and_return("3.2.7")
-        allow(version_resolver).to receive(:resolve_target_version).and_raise(
-          RubyGems::VersionResolver::ResolutionError.new("No matching version")
+        allow(RubyCore::BundledGemsBumper).to receive(:bump!).and_raise(
+          RubyCore::DiffValidator::ValidationError.new("No matching version")
         )
       end
 
@@ -129,8 +129,7 @@ RSpec.describe Evaluation::PatchBundleBuilder do
         )
 
         expect(result.state).to eq("awaiting_fix")
-        expect(result.blocked_reason).to eq("RubyGems::VersionResolver::ResolutionError")
-        expect(result.review_notes).to include("No matching version")
+        expect(result.blocked_reason).to include("bump_generation_failed: No matching version")
       end
     end
 

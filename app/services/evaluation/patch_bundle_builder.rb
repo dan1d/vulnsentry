@@ -170,7 +170,7 @@ module Evaluation
         if resolution[:excluded_advisories].present?
           mark_excluded_advisories(bundle, resolution[:excluded_advisories], resolution[:exclusion_reason])
         end
-      rescue RubyCore::BundledGemsBumper::BumpError => e
+      rescue RubyCore::BundledGemsFile::ParseError, RubyCore::DiffValidator::ValidationError => e
         bundle.update!(
           state: "awaiting_fix",
           target_version: target,
