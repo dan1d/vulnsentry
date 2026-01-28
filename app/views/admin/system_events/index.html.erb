@@ -7,6 +7,16 @@
       subtitle: "Recent app events, warnings, and failures." %>
 
     <div class="box">
+    <%= render layout: "shared/filter_form", locals: { url: admin_system_events_path, clear_path: admin_system_events_path } do %>
+      <%= render "shared/filter_field", label: "Search", name: :q, value: params[:q], placeholder: "message or payload...", column_class: "column is-4" %>
+      <%= render "shared/filter_field", label: "Kind", name: :kind, value: params[:kind] %>
+      <%= render "shared/filter_field", label: "Status", name: :status, value: params[:status] %>
+      <%= render "shared/filter_field", label: "Gem", name: :gem_name, value: params[:gem_name] %>
+      <%= render "shared/filter_field", label: "Branch", name: :branch, value: params[:branch] %>
+      <%= render "shared/filter_field", label: "Occurred after", name: :occurred_after, value: params[:occurred_after], placeholder: "YYYY-MM-DD or ISO" %>
+      <%= render "shared/filter_field", label: "Occurred before", name: :occurred_before, value: params[:occurred_before], placeholder: "YYYY-MM-DD or ISO" %>
+    <% end %>
+
       <% if @events.any? %>
         <table class="table is-fullwidth is-hoverable">
           <thead>
