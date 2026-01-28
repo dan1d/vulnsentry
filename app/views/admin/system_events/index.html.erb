@@ -9,7 +9,7 @@
     <div class="box">
     <%= render layout: "shared/filter_form", locals: { url: admin_system_events_path, clear_path: admin_system_events_path } do %>
       <%= render "shared/filter_field", label: "Search", name: :q, value: params[:q], placeholder: "message or payload...", column_class: "column is-4" %>
-      <%= render "shared/filter_field", label: "Kind", name: :kind, value: params[:kind] %>
+  <%= render "shared/filter_field", label: "Kind", name: :kind, value: params[:kind], type: :select, options: SystemEventKinds.options_for_select %>
       <%= render "shared/filter_field", label: "Status", name: :status, value: params[:status] %>
       <%= render "shared/filter_field", label: "Gem", name: :gem_name, value: params[:gem_name] %>
       <%= render "shared/filter_field", label: "Branch", name: :branch, value: params[:branch] %>
