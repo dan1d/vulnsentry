@@ -2,6 +2,7 @@
 
 # Constants for SystemEvent kinds used throughout the application.
 # Include in SystemEvent model to access as SystemEvent::KINDS::*
+# Can also be used directly: SystemEventKinds.options_for_select
 module SystemEventKinds
   extend ActiveSupport::Concern
 
@@ -85,19 +86,39 @@ module SystemEventKinds
     MAINTAINER_FEEDBACK
   ].freeze
 
+  # Module-level methods that can be called directly on SystemEventKinds
+  class << self
+    # Returns options suitable for Rails select helpers
+    # Usage: <%= select_tag :kind, options_for_select(SystemEventKinds.options_for_select) %>
+    def options_for_select
+      ALL_KINDS.map { |k| [ k.titleize, k ] }
+    end
+
+    # Returns grouped options for select helpers
+    # Usage: <%= grouped_options_for_select(SystemEventKinds.grouped_options_for_select) %>
+    def grouped_options_for_select
+      {
+        "Advisory" => ADVISORY_KINDS.map { |k| [ k.titleize, k ] },
+        "Branch" => BRANCH_KINDS.map { |k| [ k.titleize, k ] },
+        "Evaluation" => EVALUATION_KINDS.map { |k| [ k.titleize, k ] },
+        "Pull Request" => PR_KINDS.map { |k| [ k.titleize, k ] }
+      }
+    end
+
+    # Check if a kind is valid
+    def valid_kind?(kind)
+      ALL_KINDS.include?(kind)
+    end
+  end
+
   included do
-    # Class methods for options_for_select dropdowns
+    # Class methods for options_for_select dropdowns (delegates to module)
     def self.kind_options_for_select
-      SystemEventKinds::ALL_KINDS.map { |k| [ k.titleize, k ] }
+      SystemEventKinds.options_for_select
     end
 
     def self.grouped_kind_options_for_select
-      {
-        "Advisory" => SystemEventKinds::ADVISORY_KINDS.map { |k| [ k.titleize, k ] },
-        "Branch" => SystemEventKinds::BRANCH_KINDS.map { |k| [ k.titleize, k ] },
-        "Evaluation" => SystemEventKinds::EVALUATION_KINDS.map { |k| [ k.titleize, k ] },
-        "Pull Request" => SystemEventKinds::PR_KINDS.map { |k| [ k.titleize, k ] }
-      }
+      SystemEventKinds.grouped_options_for_select
     end
   end
 end
