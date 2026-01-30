@@ -161,9 +161,15 @@ Provision Postgres yourself (managed DB or self-hosted) and set the `PG*` env va
 ### 4) Deploy
 
 ```bash
-bin/kamal setup
-bin/kamal deploy
+# First time setup
+source .env.production && bin/kamal setup
+
+# Subsequent deploys
+source .env.production && bin/kamal deploy
 ```
+
+> **Note:** You must source `.env.production` before running kamal because Kamal clones
+> the repo to a temp directory where `.env.production` isn't available.
 
 ### 5) Jobs in production
 `config/deploy.yml` currently runs Solid Queue in Puma (`SOLID_QUEUE_IN_PUMA: true`).
