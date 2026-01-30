@@ -7,11 +7,12 @@
       <span class="has-text-ruby">VulnSentry</span>
     </h1>
     <p class="subtitle is-4 mb-4">
-      Automated vulnerability detection with human-gated PR creation for Ruby bundled gems
+      Automated vulnerability detection with human-gated PR creation for Ruby projects
     </p>
     <p class="has-text-grey mb-5">
-      A Rails 8 application that monitors Ruby's bundled gems, correlates vulnerability data from multiple sources,
-      and produces human-reviewable security patches with LLM-assisted decision making.
+      A Rails 8 application that monitors multiple Ruby projects (Ruby core, Rails, etc.), correlates vulnerability
+      data from multiple sources, and produces human-reviewable security patches with LLM-assisted decision making.
+      Supports different dependency file formats: bundled_gems for Ruby and Gemfile.lock for Rails.
     </p>
     
     <!-- Stats Row -->
@@ -51,24 +52,27 @@
       <div class="column">
         <h3 class="title is-5 has-text-ruby">The Challenge</h3>
         <p class="mb-3">
-          Ruby's standard library includes bundled gems that ship with each Ruby release. When vulnerabilities
-          are discovered in these gems, they need to be patched quickly to protect the entire Ruby ecosystem.
+          Ruby's standard library includes bundled gems that ship with each Ruby release, and Rails includes
+          numerous dependencies in its Gemfile.lock. When vulnerabilities are discovered in these gems,
+          they need to be patched quickly to protect the entire ecosystem.
         </p>
         <p>
           Manually tracking vulnerabilities across multiple sources (GHSA, OSV, ruby-lang announcements),
-          determining compatible versions, and creating properly formatted PRs is time-consuming and error-prone.
+          determining compatible versions across different projects and file formats, and creating properly
+          formatted PRs is time-consuming and error-prone.
         </p>
       </div>
       
       <div class="column">
         <h3 class="title is-5 has-text-ruby">The Solution</h3>
         <p class="mb-3">
-          VulnSentry automates vulnerability detection and PR preparation while keeping humans in control.
-          It monitors multiple Ruby branches, ingests security advisories, and generates minimal, validated patches.
+          VulnSentry automates vulnerability detection and PR preparation for multiple Ruby projects
+          while keeping humans in control. It monitors Ruby (bundled_gems) and Rails (Gemfile.lock),
+          ingests security advisories, and generates minimal, validated patches.
         </p>
         <p>
           The system uses LLM assistance for complex decisions but validates all outputs.
-          PR creation requires explicit human approval, ensuring safety and accountability.
+          PR creation requires explicit human approval, ensuring safety and accountability across all projects.
         </p>
       </div>
     </div>
@@ -105,8 +109,9 @@
     <h2 class="title is-3 mb-4">System Architecture</h2>
     
     <p class="mb-4">
-      VulnSentry orchestrates a complete workflow from vulnerability detection to PR creation and synchronization.
-      Each step is designed to be resumable and observable through the admin dashboard.
+      VulnSentry orchestrates a complete workflow from vulnerability detection to PR creation and synchronization
+      across multiple Ruby projects. Each project can have different dependency file formats (bundled_gems for Ruby,
+      Gemfile.lock for Rails). Each step is designed to be resumable and observable through the admin dashboard.
     </p>
 
     <div class="mb-5">
@@ -120,6 +125,12 @@ graph TB
         RubyLang[ruby-lang RSS]
     end
     
+    subgraph projects [Project Configuration]
+        ProjectModel[(Project Model)]
+        RubyProject[Ruby Project<br/>bundled_gems]
+        RailsProject[Rails Project<br/>Gemfile.lock]
+    end
+    
     subgraph ingestion [Ingestion Layer]
         GhsaIngest[GHSA Ingestor]
         OsvIngest[OSV Ingestor]
@@ -128,7 +139,8 @@ graph TB
     
     subgraph evaluation [Evaluation Engine]
         BranchRefresh[Branch Target Refresh]
-        BundledFetch[Fetch bundled_gems]
+        ProjectFetcher[Project File Fetcher]
+        FileParser[File Parser<br/>bundled_gems or Gemfile.lock]
         AdvisoryChain[Advisory Chain]
         BundleBuilder[Patch Bundle Builder]
     end
@@ -147,6 +159,7 @@ graph TB
     
     subgraph pr [PR Management]
         CreatePR[Create PR Job]
+        ProjectCreator[Project PR Creator]
         PushFork[Push to Fork]
         GHCreate[gh pr create]
         SyncPR[Sync PR Status]
@@ -160,9 +173,16 @@ graph TB
     GhsaIngest --> Advisory
     OsvIngest --> Advisory
     
+    ProjectModel --> RubyProject
+    ProjectModel --> RailsProject
+    
+    RubyProject --> BranchRefresh
+    RailsProject --> BranchRefresh
     BranchRefresh --> CrossCheck
-    BranchRefresh --> BundledFetch
-    BundledFetch --> AdvisoryChain
+    BranchRefresh --> ProjectFetcher
+    
+    ProjectFetcher --> FileParser
+    FileParser --> AdvisoryChain
     Advisory --> AdvisoryChain
     AdvisoryChain --> BundleBuilder
     
@@ -174,7 +194,8 @@ graph TB
     Approval -->|Approved| CreatePR
     Approval -->|Rejected| PatchBundle
     
-    CreatePR --> PushFork
+    CreatePR --> ProjectCreator
+    ProjectCreator --> PushFork
     PushFork --> GHCreate
     GHCreate --> SyncPR
     SyncPR -->|Continuous| AdminUI
@@ -185,8 +206,10 @@ graph TB
       <div class="column is-half">
         <h4 class="title is-6 has-text-ruby">Key Components</h4>
         <ul>
+          <li><strong>Project Model:</strong> Multi-project support (Ruby, Rails, etc.) with different file formats</li>
           <li><strong>Advisory Ingestion:</strong> Multi-source vulnerability data (GHSA + OSV + ruby-lang)</li>
-          <li><strong>Branch Evaluation:</strong> Monitors all active Ruby maintenance branches</li>
+          <li><strong>File Parsers:</strong> Supports bundled_gems and Gemfile.lock formats</li>
+          <li><strong>Branch Evaluation:</strong> Per-project branch discovery and monitoring</li>
           <li><strong>Patch Bundle Builder:</strong> Groups related advisories and resolves target versions</li>
           <li><strong>Rate Limiter:</strong> Enforces per-gem, per-branch, and global caps</li>
         </ul>
@@ -194,10 +217,11 @@ graph TB
       <div class="column is-half">
         <h4 class="title is-6 has-text-ruby">Background Jobs</h4>
         <ul>
-          <li><code>EvaluateOsvVulnerabilitiesJob</code>: Daily evaluation of all branches</li>
+          <li><code>EvaluateOsvVulnerabilitiesJob</code>: Evaluates all enabled projects daily</li>
           <li><code>CreatePatchBundlePrJob</code>: PR creation after approval</li>
           <li><code>SyncPullRequestsJob</code>: Continuous PR status sync (every 5 min)</li>
           <li><code>ReevaluateAwaitingFixJob</code>: Re-check blocked candidates</li>
+          <li><code>RefreshBranchTargetsJob</code>: Project-aware branch discovery</li>
         </ul>
       </div>
     </div>
@@ -336,16 +360,20 @@ graph LR
         <div class="content">
           <ul>
             <li>
+              <strong>Project:</strong> Represents monitored projects (Ruby, Rails, etc.)
+              <br><span class="is-size-7 has-text-grey">Fields: name, slug, upstream_repo, fork_repo, file_type (bundled_gems/gemfile_lock), branch_discovery</span>
+            </li>
+            <li>
+              <strong>BranchTarget:</strong> Branches to evaluate per project
+              <br><span class="is-size-7 has-text-grey">Tracks maintenance_status and enabled state, scoped to projects</span>
+            </li>
+            <li>
               <strong>Advisory:</strong> Normalized vulnerability records from GHSA/OSV/ruby-lang
               <br><span class="is-size-7 has-text-grey">Fields: gem_name, cve, fingerprint, fixed_version, severity</span>
             </li>
             <li>
               <strong>PatchBundle:</strong> Primary work unit grouping multiple advisories
               <br><span class="is-size-7 has-text-grey">States: awaiting_fix → needs_review → ready_for_review → approved → submitted</span>
-            </li>
-            <li>
-              <strong>BranchTarget:</strong> Ruby branches to evaluate (ruby_3_3, master, etc.)
-              <br><span class="is-size-7 has-text-grey">Tracks maintenance_status and enabled state</span>
             </li>
             <li>
               <strong>PullRequest:</strong> Local record of GitHub PRs with status sync
@@ -364,6 +392,13 @@ graph LR
       <div class="column is-half">
         <h3 class="title is-5 has-text-ruby mb-3">Service Layer</h3>
         <div class="content">
+          <p class="mb-2"><strong>Project Files</strong> (<code>app/services/project_files/</code>):</p>
+          <ul class="mb-3">
+            <li><code>Fetcher</code>: Fetches dependency files from GitHub</li>
+            <li><code>BundledGemsFile</code>: Parses Ruby's bundled_gems format</li>
+            <li><code>GemfileLockFile</code>: Parses Bundler's Gemfile.lock format</li>
+          </ul>
+
           <p class="mb-2"><strong>Evaluation Services</strong> (<code>app/services/evaluation/</code>):</p>
           <ul class="mb-3">
             <li><code>BundledGemsVulnerabilityEvaluator</code>: Main orchestrator</li>
@@ -373,16 +408,10 @@ graph LR
 
           <p class="mb-2"><strong>GitHub Integration</strong> (<code>app/services/github/</code>):</p>
           <ul class="mb-3">
-            <li><code>RubyCorePrCreator</code>: Creates PRs via gh CLI</li>
+            <li><code>ProjectPrCreator</code>: Generic project-aware PR creator</li>
+            <li><code>RubyCorePrCreator</code>: Ruby-specific PR creator</li>
             <li><code>PullRequestStatusFetcher</code>: Syncs PR metadata</li>
             <li><code>GhCli</code>: Wrapper around GitHub CLI</li>
-          </ul>
-
-          <p class="mb-2"><strong>Ruby Core Integration</strong> (<code>app/services/ruby_core/</code>):</p>
-          <ul>
-            <li><code>BundledGemsFetcher</code>: Fetches gems/bundled_gems</li>
-            <li><code>BundledGemsBumper</code>: Generates version bump diffs</li>
-            <li><code>DiffValidator</code>: Validates single-line changes</li>
           </ul>
         </div>
       </div>
@@ -398,6 +427,7 @@ graph TB
         CreateJob[CreatePatchBundlePrJob]
         SyncJob[SyncPullRequestsJob]
         ReevalJob[ReevaluateAwaitingFixJob]
+        RefreshJob[RefreshBranchTargetsJob]
     end
     
     subgraph evaluation [Evaluation Services]
@@ -406,33 +436,55 @@ graph TB
         Chain[BundledGemsAdvisoryChain]
     end
     
+    subgraph projectFiles [Project File Services]
+        Fetcher[ProjectFiles Fetcher]
+        BundledParser[BundledGemsFile Parser]
+        GemfileLockParser[GemfileLock Parser]
+    end
+    
     subgraph github [GitHub Services]
-        Creator[RubyCorePrCreator]
-        Fetcher[PullRequestStatusFetcher]
+        ProjectCreator[ProjectPrCreator]
+        RubyCreator[RubyCorePrCreator]
+        Fetcher2[PullRequestStatusFetcher]
         CLI[GhCli]
     end
     
     subgraph models [Domain Models]
+        Project[(Project)]
+        BranchTarget[(Branch Target)]
         Advisory[(Advisory)]
-        Bundle[(PatchBundle)]
-        PR[(PullRequest)]
+        Bundle[(Patch Bundle)]
+        PR[(Pull Request)]
     end
     
+    RefreshJob --> Project
+    Project --> BranchTarget
+    
+    EvalJob --> Project
     EvalJob --> Evaluator
+    Evaluator --> Fetcher
+    Evaluator --> BundledParser
+    Evaluator --> GemfileLockParser
     Evaluator --> Chain
     Chain --> Advisory
     Evaluator --> Builder
     Builder --> Bundle
     
-    CreateJob --> Creator
-    Creator --> CLI
-    Creator --> PR
+    CreateJob --> ProjectCreator
+    CreateJob --> RubyCreator
+    ProjectCreator --> CLI
+    RubyCreator --> CLI
+    ProjectCreator --> PR
+    RubyCreator --> PR
     
-    SyncJob --> Fetcher
-    Fetcher --> CLI
-    Fetcher --> PR
+    SyncJob --> Fetcher2
+    Fetcher2 --> CLI
+    Fetcher2 --> PR
     
     ReevalJob --> Builder
+    
+    BranchTarget --> Bundle
+    Bundle --> PR
       </pre>
     </div>
   </div>
@@ -543,6 +595,16 @@ graph TB
       
       <div class="column is-half">
         <div class="notification is-dark">
+          <h4 class="title is-6 has-text-ruby">Multi-Project Support</h4>
+          <p>
+            Monitors multiple Ruby projects (Ruby core, Rails, etc.) with different dependency file formats.
+            Each project has its own configuration, fork settings, and branch discovery method.
+          </p>
+        </div>
+      </div>
+      
+      <div class="column is-half">
+        <div class="notification is-dark">
           <h4 class="title is-6 has-text-ruby">Multi-Source Vulnerability Data</h4>
           <p>
             Ingests from GHSA, OSV, and ruby-lang RSS feeds. Cross-references advisories with official announcements
@@ -611,12 +673,14 @@ graph TB
       <div class="column">
         <h3 class="title is-5 has-text-ruby mb-3">Motivation</h3>
         <p class="mb-3">
-          I wanted to tackle a real problem in the Ruby ecosystem: keeping bundled gems secure requires constant vigilance
-          across multiple vulnerability sources, Ruby maintenance branches, and rapid response when advisories are published.
+          I wanted to tackle a real problem in the Ruby ecosystem: keeping both Ruby core bundled gems and Rails
+          dependencies secure requires constant vigilance across multiple vulnerability sources, different file formats,
+          and rapid response when advisories are published.
         </p>
         <p>
           This project demonstrates how automation can augment human decision-making without replacing it—especially
-          in security-critical domains where mistakes have consequences.
+          in security-critical domains where mistakes have consequences. The multi-project architecture shows how
+          to build flexible, extensible systems that can adapt to different workflows.
         </p>
       </div>
       
@@ -651,7 +715,16 @@ graph TB
             <h4 class="title is-6">Multi-Source Data Reconciliation</h4>
             <p class="is-size-7">
               GHSA and OSV use different formats and identifiers. Built a normalization layer that deduplicates and
-              cross-references with ruby-lang announcements.
+              cross-references with ruby-lang announcements, working across multiple projects.
+            </p>
+          </div>
+        </div>
+        <div class="column is-half">
+          <div class="box is-compact">
+            <h4 class="title is-6">Multi-Format File Parsing</h4>
+            <p class="is-size-7">
+              Created abstraction layer supporting both Ruby's bundled_gems format and Bundler's Gemfile.lock,
+              with unified interface for version bumping and diff generation.
             </p>
           </div>
         </div>
@@ -771,22 +844,40 @@ graph TB
     startOnLoad: true,
     theme: 'dark',
     themeVariables: {
-      primaryColor: '#CC342D',
-      primaryTextColor: '#e8e8f0',
+      // Softer backgrounds for reduced contrast
+      primaryColor: '#2d2d4a',
+      primaryTextColor: '#d0d0e0',
       primaryBorderColor: '#CC342D',
-      lineColor: '#a0a0b8',
-      secondaryColor: '#1a1a2e',
-      tertiaryColor: '#252542',
+      lineColor: '#808090',
+      secondaryColor: '#252542',
+      tertiaryColor: '#1e1e32',
+      
+      // Diagram backgrounds - softer tones
       background: '#1e1e32',
-      mainBkg: '#1e1e32',
-      secondBkg: '#1a1a2e',
-      tertiaryBkg: '#252542',
+      mainBkg: '#2d2d4a',
+      secondBkg: '#252542',
+      tertiaryBkg: '#1e1e32',
+      
+      // Borders and accents
       nodeBorder: '#CC342D',
-      clusterBkg: '#1a1a2e',
-      clusterBorder: '#2d2d4a',
+      clusterBkg: '#252542',
+      clusterBorder: '#3d3d5c',
+      
+      // Text colors - improved readability
       titleColor: '#e8e8f0',
-      edgeLabelBackground: '#1a1a2e',
-      nodeTextColor: '#e8e8f0'
+      edgeLabelBackground: '#252542',
+      nodeTextColor: '#d0d0e0',
+      textColor: '#d0d0e0',
+      
+      // Font settings for better readability
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      fontSize: '14px'
+    },
+    flowchart: {
+      nodeSpacing: 50,
+      rankSpacing: 50,
+      curve: 'basis',
+      padding: 15
     }
   });
 </script>

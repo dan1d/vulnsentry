@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_30_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_30_222300) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -48,8 +48,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_30_120000) do
     t.boolean "allow_draft_pr", default: false, null: false
     t.datetime "created_at", null: false
     t.boolean "emergency_stop", default: false, null: false
-    t.string "fork_git_url", default: "git@github.com:dan1d/ruby.git", null: false
-    t.string "fork_repo", default: "dan1d/ruby", null: false
     t.integer "global_daily_cap", default: 3, null: false
     t.integer "global_hourly_cap", default: 1, null: false
     t.integer "per_branch_daily_cap", default: 1, null: false
@@ -58,7 +56,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_30_120000) do
     t.boolean "require_human_approval", default: true, null: false
     t.boolean "singleton", default: true, null: false
     t.datetime "updated_at", null: false
-    t.string "upstream_repo", default: "ruby/ruby", null: false
     t.index ["singleton"], name: "index_bot_configs_on_singleton", unique: true, where: "singleton"
   end
 
@@ -69,9 +66,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_30_120000) do
     t.datetime "last_seen_at"
     t.string "maintenance_status", null: false
     t.string "name", null: false
+    t.bigint "project_id", null: false
     t.text "source_url"
     t.datetime "updated_at", null: false
-    t.index ["name"], name: "index_branch_targets_on_name", unique: true
+    t.index ["project_id", "name"], name: "index_branch_targets_on_project_id_and_name", unique: true
+    t.index ["project_id"], name: "index_branch_targets_on_project_id"
   end
 
   create_table "bundled_advisories", force: :cascade do |t|
@@ -135,10 +134,28 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_30_120000) do
     t.index ["branch_target_id"], name: "index_patch_bundles_on_branch_target_id"
     t.index ["created_at"], name: "index_patch_bundles_on_created_at"
     t.index ["gem_name", "base_branch", "state"], name: "index_patch_bundles_on_gem_name_and_base_branch_and_state"
-    t.index ["state", "created_at"], name: "index_patch_bundles_actionable", where: "((state)::text = ANY (ARRAY[('needs_review'::character varying)::text, ('ready_for_review'::character varying)::text]))"
-    t.index ["state", "created_at"], name: "index_patch_bundles_needs_attention", where: "((state)::text = ANY (ARRAY[('blocked_rate_limited'::character varying)::text, ('rejected'::character varying)::text, ('failed'::character varying)::text]))"
+    t.index ["state", "created_at"], name: "index_patch_bundles_actionable", where: "((state)::text = ANY ((ARRAY['needs_review'::character varying, 'ready_for_review'::character varying])::text[]))"
+    t.index ["state", "created_at"], name: "index_patch_bundles_needs_attention", where: "((state)::text = ANY ((ARRAY['blocked_rate_limited'::character varying, 'rejected'::character varying, 'failed'::character varying])::text[]))"
     t.index ["state", "last_evaluated_at"], name: "index_patch_bundles_for_reevaluation"
     t.index ["state"], name: "index_patch_bundles_on_state"
+  end
+
+  create_table "projects", force: :cascade do |t|
+    t.string "branch_discovery", default: "manual"
+    t.datetime "created_at", null: false
+    t.boolean "enabled", default: true, null: false
+    t.string "file_path", null: false
+    t.string "file_type", null: false
+    t.string "fork_git_url"
+    t.string "fork_repo"
+    t.string "name", null: false
+    t.jsonb "settings", default: {}, null: false
+    t.string "slug", null: false
+    t.datetime "updated_at", null: false
+    t.string "upstream_repo", null: false
+    t.index ["enabled"], name: "index_projects_on_enabled"
+    t.index ["slug"], name: "index_projects_on_slug", unique: true
+    t.index ["upstream_repo"], name: "index_projects_on_upstream_repo", unique: true
   end
 
   create_table "pull_requests", force: :cascade do |t|
@@ -158,6 +175,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_30_120000) do
     t.bigint "patch_bundle_id"
     t.integer "pr_number"
     t.text "pr_url"
+    t.bigint "project_id"
     t.string "review_state"
     t.string "status", default: "open", null: false
     t.datetime "updated_at", null: false
@@ -167,6 +185,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_30_120000) do
     t.index ["fork_repo", "head_branch"], name: "index_pull_requests_on_fork_repo_and_head_branch"
     t.index ["patch_bundle_id"], name: "index_pull_requests_on_patch_bundle_id"
     t.index ["patch_bundle_id"], name: "index_pull_requests_on_patch_bundle_unique", unique: true, where: "(patch_bundle_id IS NOT NULL)"
+    t.index ["project_id"], name: "index_pull_requests_on_project_id"
     t.index ["upstream_repo", "pr_number"], name: "index_pull_requests_on_upstream_repo_and_pr_number", unique: true, where: "(pr_number IS NOT NULL)"
   end
 
@@ -184,6 +203,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_30_120000) do
     t.index ["status", "occurred_at"], name: "index_system_events_on_status_and_occurred_at"
   end
 
+  add_foreign_key "branch_targets", "projects"
   add_foreign_key "bundled_advisories", "advisories"
   add_foreign_key "bundled_advisories", "patch_bundles"
   add_foreign_key "candidate_bumps", "advisories"
@@ -191,4 +211,5 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_30_120000) do
   add_foreign_key "patch_bundles", "branch_targets"
   add_foreign_key "pull_requests", "candidate_bumps"
   add_foreign_key "pull_requests", "patch_bundles"
+  add_foreign_key "pull_requests", "projects"
 end

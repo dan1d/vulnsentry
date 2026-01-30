@@ -54,11 +54,17 @@ These are the “stateful” entities that let the system be resumable and obser
   - Tracks `status` (`open`/`closed`/`merged`), timestamps, fork branch name, and **comment snapshots** (`comments_snapshot`).
   - Belongs to either a `PatchBundle` (new) or `CandidateBump` (legacy).
 
+- **`Project`** (`app/models/project.rb`)
+  - Represents a monitored open-source project (e.g., `ruby/ruby`, `rails/rails`).
+  - Key fields: `name`, `slug`, `upstream_repo`, `fork_repo`, `fork_git_url`, `file_type`, `file_path`, `branch_discovery`, `enabled`.
+  - Each project has its own branch targets, dependency file format, and fork configuration.
+  - Supports multiple file types: `bundled_gems` (Ruby core) and `gemfile_lock` (standard Bundler projects).
+
 - **`BotConfig`** (`app/models/bot_config.rb`)
-  - Singleton config for safety + targeting:
+  - Singleton config for global safety settings:
     - `require_human_approval`, `emergency_stop`
     - caps/cooldowns
-    - `upstream_repo`, `fork_repo`, optional `fork_git_url`
+  - Note: Repo-specific settings (upstream_repo, fork_repo) have moved to `Project` model.
 
 - **`SystemEvent`** (`app/models/system_event.rb`)
   - Append-only events used for troubleshooting and audit (kinds like `create_pr`, `candidate_build`, `ghsa_ingest`, etc.).
@@ -87,14 +93,16 @@ These are the “stateful” entities that let the system be resumable and obser
   - GHSA parsing can be messy; parse errors are logged as **warning** `SystemEvent`s and do not abort ingestion.
   - Both ingestors try to attach a ruby-lang announcement URL when possible (via RSS helper).
 
-### 3) Evaluation (branch → bundled gems → candidates)
-**Goal**: for each enabled branch, read `gems/bundled_gems`, detect vulnerable entries, and build bump candidates.
+### 3) Evaluation (project → branch → dependencies → candidates)
+**Goal**: for each enabled project and branch, read the dependency file, detect vulnerable entries, and build bump candidates.
 
 - **Job**: `EvaluateOsvVulnerabilitiesJob` (`app/jobs/evaluate_osv_vulnerabilities_job.rb`)
-  - (Despite the name, evaluation uses an advisory chain that can include GHSA/OSV.)
-  - Explicitly excludes EOL branches.
+  - Iterates over all enabled `Project` records.
+  - For each project, evaluates all enabled non-EOL branches.
+  - Supports targeting a specific project via `project_slug` parameter.
 - **Evaluator**: `Evaluation::BundledGemsVulnerabilityEvaluator` (`app/services/evaluation/bundled_gems_vulnerability_evaluator.rb`)
-  - Fetches `gems/bundled_gems` from GitHub for each branch.
+  - Accepts a `project:` parameter to determine file parser and fetcher.
+  - Uses the project's `file_parser_class` to parse dependencies (bundled_gems or Gemfile.lock).
   - For each entry, asks the advisory chain for relevant advisories.
   - For each advisory, asks the builder to build/update a `PatchBundle` and link the advisory into it.
 - **Patch bundle builder**: `Evaluation::PatchBundleBuilder` (`app/services/evaluation/patch_bundle_builder.rb`)
@@ -129,14 +137,17 @@ These are the “stateful” entities that let the system be resumable and obser
     - bundle transitions to `failed`
     - a `SystemEvent(kind: "create_patch_bundle_pr")` is recorded with exception details
 
-- **PR creator**: `Github::RubyCorePrCreator` (`app/services/github/ruby_core_pr_creator.rb`)
-  - Clones upstream branch (`https://github.com/<upstream>.git`) into a temp directory
-  - Creates a head branch named like `bump-<gem>-<version>-<branch>`
-  - Applies the bump with strict constraints:
-    - expected diff must match `proposed_diff` (or the record must not have one)
-    - refuses if any file other than `gems/bundled_gems` changes
-  - Pushes to the fork using SSH (`git@github.com:<fork>.git` by default)
-  - Creates PR via `gh pr create` (supports draft PRs), and detects existing PRs via `gh pr list --head ...`
+- **PR creators**:
+  - `Github::ProjectPrCreator` (`app/services/github/project_pr_creator.rb`) - Generic, project-aware PR creator
+  - `Github::RubyCorePrCreator` (`app/services/github/ruby_core_pr_creator.rb`) - Legacy, Ruby-specific (kept for backwards compatibility)
+  - Both:
+    - Clone upstream branch (`https://github.com/<project.upstream_repo>.git`) into a temp directory
+    - Create a head branch named like `bump-<gem>-<version>-<branch>`
+    - Apply the bump with strict constraints:
+      - expected diff must match `proposed_diff` (or the record must not have one)
+      - refuse if any file other than the project's `file_path` changes
+    - Push to the fork using SSH (`project.fork_git_url`)
+    - Create PR via `gh pr create` (supports draft PRs), and detect existing PRs via `gh pr list --head ...`
 
 ### 4b) Re-evaluating “awaiting fix” bundles
 **Goal**: periodically check if upstream sources gained a fixed version for previously-unfixable advisories.
@@ -214,8 +225,14 @@ Kamal builds and runs a Docker image of the Rails app.
 - SSL termination: `kamal-proxy` with Let’s Encrypt (`proxy.ssl: true`, `proxy.host: vulnsentry.com`)
 
 ### Environment and secrets
-Kamal injects ENV vars into the container:
 
+**Development/Test:**
+- Uses **dotenv-rails** to load environment variables from `.env.local`
+- Copy `.env.example` to `.env.local` and customize
+- dotenv does NOT override existing shell environment variables
+
+**Production:**
+- Kamal injects ENV vars into the container
 - Secrets are referenced in `config/deploy.yml` and provided via `.kamal/secrets`:
   - `RAILS_MASTER_KEY`
   - `GH_TOKEN` (for `gh api`, `gh pr create`, etc.)
@@ -248,11 +265,36 @@ This uses `bin/kamal app exec ... bin/rails db:migrate` against the release bein
 
 ---
 
+---
+
+## Multi-project architecture
+
+VulnSentry supports monitoring multiple open-source Ruby projects, each with its own dependency file format.
+
+### Project file parsers
+
+Located in `app/services/project_files/`:
+
+- **`ProjectFiles::Base`** - Abstract interface for file parsers
+- **`ProjectFiles::BundledGemsFile`** - Parses Ruby's `gems/bundled_gems` format
+- **`ProjectFiles::GemfileLockFile`** - Parses Bundler's `Gemfile.lock` format
+- **`ProjectFiles::Fetcher`** - Fetches dependency files from GitHub with caching
+
+### Supported file types
+
+| File Type | Format | Example Projects |
+|-----------|--------|------------------|
+| `bundled_gems` | `gem version repo [revision]` | ruby/ruby |
+| `gemfile_lock` | Bundler lockfile | rails/rails, mastodon/mastodon |
+
+---
+
 ## Where to look when debugging
 
 - **Admin UI**: `app/controllers/admin/*`, `app/views/admin/*`
 - **Job pipeline entrypoints**: `app/jobs/*`
 - **Candidate creation logic**: `app/services/evaluation/*`
+- **File parsers**: `app/services/project_files/*`
 - **GitHub interactions**: `app/services/github/*`
 - **External vulnerability ingestion**: `app/services/advisories/*`
 - **System-level breadcrumbs**: `SystemEvent` records + `/admin/system_events`

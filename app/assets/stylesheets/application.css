@@ -19,14 +19,14 @@
   --bg-card: #1e1e32;
 
   --text-primary: #e8e8f0;
-  --text-secondary: #a0a0b8;
-  --text-muted: #8080a0; /* Improved contrast for WCAG AA compliance */
+  --text-secondary: #b0b0c8; /* Improved from #a0a0b8 for better contrast */
+  --text-muted: #9090b0; /* Improved from #8080a0 for WCAG AA compliance */
 
   --border-color: #2d2d4a;
   --border-light: #3d3d5c;
 
   --success: #48c774;
-  --warning: #f5b300; /* Improved contrast for medium confidence */
+  --warning: #ffc107; /* Improved contrast from #f5b300 */
   --danger: #f14668;
   --info: #3e8ed0;
 
@@ -102,6 +102,13 @@ textarea:focus-visible {
   color: var(--ruby-red-light) !important;
 }
 
+/* Active navbar item indicator */
+.navbar-item.is-active {
+  background-color: var(--bg-tertiary) !important;
+  color: var(--ruby-red) !important;
+  border-bottom: 2px solid var(--ruby-red);
+}
+
 .navbar-menu {
   background-color: var(--bg-secondary);
 }
@@ -122,6 +129,19 @@ textarea:focus-visible {
   padding: 1rem;
 }
 
+.box.is-compact .heading {
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.box.is-compact p:not(.heading):not(.title) {
+  color: var(--text-primary);
+}
+
+.box.is-compact .is-size-7 {
+  color: var(--text-secondary);
+}
+
 /* Titles and Text */
 .title {
   color: var(--text-primary) !important;
@@ -132,7 +152,10 @@ textarea:focus-visible {
 }
 
 .heading {
-  color: var(--text-muted);
+  color: var(--text-secondary); /* Improved from text-muted */
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .has-text-grey {
@@ -342,6 +365,28 @@ a:hover {
   color: #48c774;
 }
 
+/* Notifications - Improved contrast for dark theme */
+.notification {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.notification.is-dark {
+  background-color: rgba(42, 42, 68, 0.6);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.notification.is-dark strong,
+.notification.is-dark .has-text-weight-semibold {
+  color: var(--text-primary);
+}
+
+.notification.is-dark code {
+  background-color: var(--bg-secondary);
+  color: var(--ruby-red-light);
+}
+
 /* Media */
 .media + .media {
   border-top-color: var(--border-color);
@@ -396,6 +441,40 @@ code {
   color: var(--ruby-red-light);
   padding: 0.125rem 0.375rem;
   border-radius: 4px;
+}
+
+/* Mermaid Diagram Styling - Reduce Contrast */
+pre.mermaid {
+  background-color: var(--bg-card) !important;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 1rem 0;
+}
+
+/* Override any harsh mermaid defaults */
+.mermaid svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Ensure mermaid text is readable but not harsh */
+.mermaid .nodeLabel,
+.mermaid .edgeLabel {
+  color: #d0d0e0 !important;
+}
+
+.mermaid .cluster rect {
+  fill: #252542 !important;
+  stroke: #3d3d5c !important;
+}
+
+.mermaid .node rect,
+.mermaid .node circle,
+.mermaid .node polygon {
+  fill: #2d2d4a !important;
+  stroke: #CC342D !important;
+  stroke-width: 2px;
 }
 
 /* ========================================

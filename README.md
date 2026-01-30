@@ -169,9 +169,18 @@ bin/kamal deploy
 `config/deploy.yml` currently runs Solid Queue in Puma (`SOLID_QUEUE_IN_PUMA: true`).
 For higher volume, split jobs into a separate role and run `bin/jobs` on job servers.
 
-## Repo targeting defaults
-- **Upstream**: `ruby/ruby`
-- **Fork**: `dan1d/ruby` (SSH: `git@github.com:dan1d/ruby.git`)
+## Multi-Project Support
+
+VulnSentry can monitor multiple open-source projects. Each project has its own:
+- Upstream repository and fork configuration
+- Dependency file format (`bundled_gems` or `Gemfile.lock`)
+- Branch targets and discovery method
+
+**Default projects:**
+- **Ruby Core**: `ruby/ruby` with `gems/bundled_gems` (fork: `dan1d/ruby`)
+- **Rails**: `rails/rails` with `Gemfile.lock` (disabled by default)
+
+Configure projects via the Admin UI at `/admin/projects`.
 
 ## Safety model
 - Minimal diffs only (1-line change to `gems/bundled_gems`)
