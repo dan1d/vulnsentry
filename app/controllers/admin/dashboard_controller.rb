@@ -46,6 +46,13 @@ class Admin::DashboardController < Admin::BaseController
         value: PatchBundle.count,
         trend: calculate_trend(PatchBundle, :created_at),
         trend_period: "today"
+      },
+      # Additional stats for notifications
+      pending_reviews: {
+        value: PatchBundle.ready_for_review.count
+      },
+      new_advisories_24h: {
+        value: Advisory.where("created_at > ?", 24.hours.ago).count
       }
     }
   end

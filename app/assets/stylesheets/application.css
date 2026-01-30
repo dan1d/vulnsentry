@@ -834,3 +834,41 @@ turbo-frame[busy]::after {
   from { transform: rotate(0deg); }
   to { transform: rotate(359deg); }
 }
+
+/* ========================================
+   Notification Button States
+   ======================================== */
+.notification-btn {
+  transition: all 0.2s ease;
+}
+
+/* Hide button when notifications are granted (already enabled) */
+.notification-btn.is-hidden {
+  display: none !important;
+}
+
+/* Show success state briefly after enabling */
+.notification-btn.is-enabled {
+  background-color: var(--success) !important;
+  border-color: var(--success) !important;
+  color: white !important;
+}
+
+/* Disabled state when notifications blocked */
+.notification-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Bell icon animation on hover */
+.notification-btn:hover .icon svg {
+  animation: bellRing 0.5s ease;
+}
+
+@keyframes bellRing {
+  0%, 100% { transform: rotate(0); }
+  20% { transform: rotate(15deg); }
+  40% { transform: rotate(-15deg); }
+  60% { transform: rotate(10deg); }
+  80% { transform: rotate(-10deg); }
+}

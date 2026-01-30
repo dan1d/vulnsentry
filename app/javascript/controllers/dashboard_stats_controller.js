@@ -22,6 +22,7 @@ export default class extends Controller {
 
   connect() {
     this.boundHandleVisibilityChange = this.handleVisibilityChange.bind(this)
+    this.previousData = {} // Track previous values for change detection
     this.startPolling()
     document.addEventListener('visibilitychange', this.boundHandleVisibilityChange)
   }
@@ -100,6 +101,71 @@ export default class extends Controller {
         }
       }
     })
+
+    // Check for new advisories and notify
+    this.checkForNewAdvisories(data)
+    
+    // Store current data for next comparison
+    this.previousData = { ...data }
+  }
+
+  /**
+   * Check if new advisories were found and trigger browser notification
+   */
+  checkForNewAdvisories(data) {
+    // Skip on first load (no previous data)
+    if (Object.keys(this.previousData).length === 0) return
+
+    // Check if pending reviews increased (new bundles requiring attention)
+    const prevPending = this.previousData.pending_reviews?.value || 0
+    const currentPending = data.pending_reviews?.value || 0
+    
+    if (currentPending > prevPending) {
+      const newCount = currentPending - prevPending
+      this.triggerNotification(
+        `🚨 ${newCount} New Patch Bundle${newCount > 1 ? 's' : ''} Ready`,
+        "New security patches require your review.",
+        "/admin/patch_bundles?state=ready_for_review"
+      )
+    }
+
+    // Check for new advisories
+    const prevAdvisories = this.previousData.new_advisories_24h?.value || 0
+    const currentAdvisories = data.new_advisories_24h?.value || 0
+    
+    if (currentAdvisories > prevAdvisories) {
+      const newCount = currentAdvisories - prevAdvisories
+      this.triggerNotification(
+        `⚠️ ${newCount} New Advisory${newCount > 1 ? "ies" : ""} Detected`,
+        "New security vulnerabilities found in bundled gems.",
+        "/admin/advisories"
+      )
+    }
+  }
+
+  /**
+   * Trigger a browser notification if permitted
+   */
+  triggerNotification(title, body, url) {
+    if (!("Notification" in window)) return
+    if (Notification.permission !== "granted") return
+
+    const notification = new Notification(title, {
+      body,
+      icon: "/icon.png",
+      badge: "/icon.png",
+      tag: `vulnsentry-${Date.now()}`,
+      requireInteraction: true
+    })
+
+    notification.onclick = () => {
+      window.focus()
+      if (url) window.location.href = url
+      notification.close()
+    }
+
+    // Auto-close after 15 seconds
+    setTimeout(() => notification.close(), 15000)
   }
 
   updateTrend(statElement, trend, period) {
