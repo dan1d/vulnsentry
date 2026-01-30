@@ -20,15 +20,26 @@
 
   --text-primary: #e8e8f0;
   --text-secondary: #a0a0b8;
-  --text-muted: #6b6b85;
+  --text-muted: #8080a0; /* Improved contrast for WCAG AA compliance */
 
   --border-color: #2d2d4a;
   --border-light: #3d3d5c;
 
   --success: #48c774;
-  --warning: #ffdd57;
+  --warning: #f5b300; /* Improved contrast for medium confidence */
   --danger: #f14668;
   --info: #3e8ed0;
+
+  /* Standardized border radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-pill: 9999px;
+
+  /* Dashboard dimensions */
+  --dashboard-list-max-height: 320px;
+  --stat-card-min-height: 180px;
+  --panel-min-height: 320px;
 }
 
 /* ========================================
@@ -41,6 +52,33 @@ html {
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
+  margin: 0;
+  padding: 0;
+}
+
+/* ========================================
+   Accessibility - Focus States
+   ======================================== */
+.button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--ruby-red);
+  outline-offset: 2px;
+}
+
+/* Screen reader only - for live announcements */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* ========================================
@@ -391,11 +429,7 @@ a.is-ruby:hover {
   z-index: 30;
 }
 
-/* Remove body margin/padding for flush navbar */
-body {
-  margin: 0;
-  padding: 0;
-}
+/* Body styles are consolidated above in Global Dark Theme section */
 
 /* Section adjustments for admin pages with sticky nav */
 .navbar.is-sticky + .section {
@@ -472,6 +506,12 @@ hr {
    ======================================== */
 .stat-card {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  min-height: var(--stat-card-min-height);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 1.5rem 1rem;
+  border-radius: var(--radius-lg);
 }
 
 .stat-card:hover {
@@ -479,15 +519,32 @@ hr {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
+.stat-card .heading {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 0.25rem;
+}
+
 .stat-icon {
   display: flex;
   justify-content: center;
   align-items: center;
+  margin-bottom: 0.75rem;
 }
 
 .stat-icon svg {
   color: var(--ruby-red);
-  opacity: 0.8;
+  opacity: 0.9;
+  width: 28px;
+  height: 28px;
+}
+
+.stat-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
 }
 
 .stat-value-container {
@@ -495,6 +552,20 @@ hr {
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
+  min-height: 80px; /* Reserve space for trend indicator */
+  justify-content: flex-start;
+  padding-top: 0.5rem;
+}
+
+/* Mobile responsiveness for stat cards */
+@media screen and (max-width: 768px) {
+  .stat-card {
+    min-height: 140px;
+  }
+  
+  .stat-card:hover {
+    transform: none; /* Disable hover transform on touch devices */
+  }
 }
 
 .stat-trend {
@@ -551,6 +622,9 @@ hr {
    ======================================== */
 .ai-insights-panel {
   border-left: 3px solid var(--ruby-red);
+  min-height: var(--panel-min-height);
+  display: flex;
+  flex-direction: column;
 }
 
 .has-text-ruby {
@@ -655,7 +729,9 @@ hr {
    Quick Actions Panel
    ======================================== */
 .quick-actions-panel {
-  height: 100%;
+  min-height: var(--panel-min-height);
+  display: flex;
+  flex-direction: column;
 }
 
 .quick-action-buttons {

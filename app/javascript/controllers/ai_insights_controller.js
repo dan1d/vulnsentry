@@ -10,15 +10,32 @@ export default class extends Controller {
   static targets = ["recommendation", "expandButton"]
 
   connect() {
+    // Bind handlers once to avoid creating new functions on each call
+    this.boundShowTooltip = this.showTooltip.bind(this)
+    this.boundHideTooltip = this.hideTooltip.bind(this)
     this.addTooltipHandlers()
   }
 
+  disconnect() {
+    // Clean up event listeners to prevent memory leaks
+    this.removeTooltipHandlers()
+  }
+
   addTooltipHandlers() {
-    const segments = this.element.querySelectorAll(".confidence-segment")
-    segments.forEach(segment => {
-      segment.addEventListener("mouseenter", this.showTooltip.bind(this))
-      segment.addEventListener("mouseleave", this.hideTooltip.bind(this))
+    this.segments = this.element.querySelectorAll(".confidence-segment")
+    this.segments.forEach(segment => {
+      segment.addEventListener("mouseenter", this.boundShowTooltip)
+      segment.addEventListener("mouseleave", this.boundHideTooltip)
     })
+  }
+
+  removeTooltipHandlers() {
+    if (this.segments) {
+      this.segments.forEach(segment => {
+        segment.removeEventListener("mouseenter", this.boundShowTooltip)
+        segment.removeEventListener("mouseleave", this.boundHideTooltip)
+      })
+    }
   }
 
   showTooltip(event) {

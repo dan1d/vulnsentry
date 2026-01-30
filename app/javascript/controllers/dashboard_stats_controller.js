@@ -21,23 +21,38 @@ export default class extends Controller {
   }
 
   connect() {
+    this.boundHandleVisibilityChange = this.handleVisibilityChange.bind(this)
     this.startPolling()
+    document.addEventListener('visibilitychange', this.boundHandleVisibilityChange)
   }
 
   disconnect() {
     this.stopPolling()
+    document.removeEventListener('visibilitychange', this.boundHandleVisibilityChange)
   }
 
   startPolling() {
     if (this.hasUrlValue) {
       this.poll()
-      this.pollTimer = setInterval(() => this.poll(), this.intervalValue)
+      this.pollTimer = setInterval(() => {
+        // Only poll when tab is visible to save resources
+        if (document.visibilityState === 'visible') {
+          this.poll()
+        }
+      }, this.intervalValue)
     }
   }
 
   stopPolling() {
     if (this.pollTimer) {
       clearInterval(this.pollTimer)
+    }
+  }
+
+  handleVisibilityChange() {
+    // Refresh immediately when tab becomes visible after being hidden
+    if (document.visibilityState === 'visible') {
+      this.poll()
     }
   }
 
@@ -75,6 +90,8 @@ export default class extends Controller {
           if (oldValue !== newValue) {
             valueElement.textContent = newValue
             this.animateChange(statElement, newValue > oldValue)
+            // Announce change to screen readers
+            this.announceChange(statId, oldValue, newValue)
           }
         }
 
@@ -138,5 +155,24 @@ export default class extends Controller {
         this.refreshButtonTarget.classList.remove("is-loading")
       }
     })
+  }
+
+  /**
+   * Announce stat changes to screen readers using ARIA live region
+   */
+  announceChange(statId, oldValue, newValue) {
+    const announcer = document.getElementById("sr-announcer") || this.createAnnouncer()
+    const label = statId.replace(/_/g, ' ')
+    announcer.textContent = `${label} updated from ${oldValue} to ${newValue}`
+  }
+
+  createAnnouncer() {
+    const div = document.createElement("div")
+    div.id = "sr-announcer"
+    div.setAttribute("aria-live", "polite")
+    div.setAttribute("aria-atomic", "true")
+    div.className = "sr-only"
+    document.body.appendChild(div)
+    return div
   }
 }
