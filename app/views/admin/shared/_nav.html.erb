@@ -22,6 +22,7 @@
 
     <div class="navbar-menu" data-navbar-target="menu">
       <div class="navbar-start">
+        <%= link_to "Projects", admin_projects_path, class: "navbar-item" %>
         <%= link_to "Branches", admin_branch_targets_path, class: "navbar-item" %>
         <%= link_to "Patches", admin_patch_bundles_path, class: "navbar-item" %>
         <%= link_to "Candidates", admin_candidate_bumps_path, class: "navbar-item" %>

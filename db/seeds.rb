@@ -1,6 +1,20 @@
 if Rails.env.production?
   # Keep production seeds intentionally minimal.
   BotConfig.instance
+
+  # Seed default projects
+  ruby_project = Project.find_or_create_by!(slug: "ruby") do |p|
+    p.name = "Ruby Core"
+    p.upstream_repo = "ruby/ruby"
+    p.fork_repo = "dan1d/ruby"
+    p.fork_git_url = "git@github.com:dan1d/ruby.git"
+    p.file_type = "bundled_gems"
+    p.file_path = "gems/bundled_gems"
+    p.branch_discovery = "ruby_lang"
+    p.enabled = true
+  end
+  puts "Seeded Project: #{ruby_project.name}"
+
   puts "Seeded BotConfig singleton."
   return
 end
@@ -37,16 +51,66 @@ puts "Created AdminUser: #{admin.username} (password from SEED_ADMIN_PASSWORD or
 BotConfig.instance.update!(emergency_stop: true)
 puts "BotConfig.emergency_stop is ON (seed safety)."
 
+# Cleanup
 PullRequest.delete_all
 CandidateBump.delete_all
+PatchBundle.delete_all
+BundledAdvisory.delete_all
 Advisory.delete_all
 BranchTarget.delete_all
+Project.delete_all
 SystemEvent.delete_all
 
-master = FactoryBot.create(:branch_target, name: "master", maintenance_status: "normal", enabled: true)
-ruby_3_4 = FactoryBot.create(:branch_target, name: "ruby_3_4", maintenance_status: "normal", enabled: true)
-ruby_3_3 = FactoryBot.create(:branch_target, name: "ruby_3_3", maintenance_status: "security", enabled: true)
-FactoryBot.create(:branch_target, name: "ruby_3_2", maintenance_status: "security", enabled: false)
+# Create Projects
+ruby_project = Project.create!(
+  name: "Ruby Core",
+  slug: "ruby",
+  upstream_repo: "ruby/ruby",
+  fork_repo: "dan1d/ruby",
+  fork_git_url: "git@github.com:dan1d/ruby.git",
+  file_type: "bundled_gems",
+  file_path: "gems/bundled_gems",
+  branch_discovery: "ruby_lang",
+  enabled: true
+)
+puts "Created Project: #{ruby_project.name}"
+
+rails_project = Project.create!(
+  name: "Rails",
+  slug: "rails",
+  upstream_repo: "rails/rails",
+  fork_repo: "vulnsentry-bot/rails",
+  fork_git_url: "git@github.com:vulnsentry-bot/rails.git",
+  file_type: "gemfile_lock",
+  file_path: "Gemfile.lock",
+  branch_discovery: "github_releases",
+  enabled: false  # Disabled by default until fork is set up
+)
+puts "Created Project: #{rails_project.name} (disabled)"
+
+mastodon_project = Project.create!(
+  name: "Mastodon",
+  slug: "mastodon",
+  upstream_repo: "mastodon/mastodon",
+  fork_repo: nil,
+  fork_git_url: nil,
+  file_type: "gemfile_lock",
+  file_path: "Gemfile.lock",
+  branch_discovery: "github_releases",
+  enabled: false  # Example project, not fully configured
+)
+puts "Created Project: #{mastodon_project.name} (disabled, no fork)"
+
+# Create Branch Targets for Ruby project
+master = FactoryBot.create(:branch_target, project: ruby_project, name: "master", maintenance_status: "normal", enabled: true)
+ruby_3_4 = FactoryBot.create(:branch_target, project: ruby_project, name: "ruby_3_4", maintenance_status: "normal", enabled: true)
+ruby_3_3 = FactoryBot.create(:branch_target, project: ruby_project, name: "ruby_3_3", maintenance_status: "security", enabled: true)
+FactoryBot.create(:branch_target, project: ruby_project, name: "ruby_3_2", maintenance_status: "security", enabled: false)
+
+# Create Branch Targets for Rails project (example)
+FactoryBot.create(:branch_target, project: rails_project, name: "main", maintenance_status: "normal", enabled: true)
+FactoryBot.create(:branch_target, project: rails_project, name: "7-1-stable", maintenance_status: "normal", enabled: true)
+FactoryBot.create(:branch_target, project: rails_project, name: "7-0-stable", maintenance_status: "security", enabled: true)
 
 advisory_rexml = FactoryBot.create(
   :advisory,

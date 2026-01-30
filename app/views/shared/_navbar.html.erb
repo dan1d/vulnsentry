@@ -12,6 +12,7 @@
 
     <div class="navbar-menu">
       <div class="navbar-end">
+        <%= link_to "About", about_path, class: "navbar-item" %>
         <% if admin_signed_in? %>
           <%= link_to "Admin", admin_root_path, class: "navbar-item" %>
         <% else %>

@@ -1,0 +1,80 @@
+<%= render "admin/shared/nav" %>
+
+<section class="section">
+  <div class="container">
+    <nav class="level mb-5">
+      <div class="level-left">
+        <div class="level-item">
+          <div>
+            <h1 class="title is-4">Projects</h1>
+            <p class="subtitle is-6 has-text-grey">Manage monitored open-source projects.</p>
+          </div>
+        </div>
+      </div>
+      <div class="level-right">
+        <div class="level-item">
+          <%= link_to new_admin_project_path, class: "button is-ruby" do %>
+            <span class="icon"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
+            <span>Add Project</span>
+          <% end %>
+        </div>
+      </div>
+    </nav>
+
+    <div class="box">
+      <table class="table is-fullwidth is-striped">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Repository</th>
+            <th>File Type</th>
+            <th>Branches</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @projects.each do |project| %>
+            <tr>
+              <td>
+                <%= link_to project.name, admin_project_path(project), class: "has-text-weight-semibold" %>
+                <br>
+                <small class="has-text-grey"><code><%= project.slug %></code></small>
+              </td>
+              <td>
+                <%= link_to project.upstream_repo, "https://github.com/#{project.upstream_repo}", target: "_blank", class: "is-family-monospace" %>
+              </td>
+              <td>
+                <span class="tag is-light"><%= project.file_type.humanize %></span>
+              </td>
+              <td>
+                <%= project.branch_targets.count %>
+              </td>
+              <td>
+                <% if project.enabled? %>
+                  <span class="tag is-success">Enabled</span>
+                <% else %>
+                  <span class="tag is-light">Disabled</span>
+                <% end %>
+                <% unless project.can_create_prs? %>
+                  <span class="tag is-warning" title="No fork configured">No Fork</span>
+                <% end %>
+              </td>
+              <td class="has-text-right">
+                <%= link_to "View", admin_project_path(project), class: "button is-small is-light" %>
+                <%= link_to "Edit", edit_admin_project_path(project), class: "button is-small is-light" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+
+      <% if @projects.empty? %>
+        <div class="has-text-centered has-text-grey py-6">
+          <p>No projects yet.</p>
+          <p><%= link_to "Create your first project", new_admin_project_path %></p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</section>

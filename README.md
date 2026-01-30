@@ -14,22 +14,46 @@ PR creation is designed to be conservative and **human-gated**.
 
 ## Setup (local)
 
-Install gems and prepare the DB:
+### 1. Environment Variables
+
+Copy the example env file and customize:
+
+```bash
+cp .env.example .env.local
+# Edit .env.local with your settings
+```
+
+The app uses **dotenv-rails** to load environment variables in development/test:
+- `.env.local` - Your local overrides (gitignored)
+- `.env.example` - Template with all available options (committed)
+
+> **Note:** dotenv does NOT override existing shell environment variables.
+> If you have `PGHOST` already set, it takes precedence over `.env.local`.
+
+### 2. Install Dependencies
 
 ```bash
 bin/setup
-export PGHOST=127.0.0.1 PGPORT=5432 PGUSER=postgres PGPASSWORD=
+```
+
+### 3. Database Setup
+
+Ensure PostgreSQL is running, then:
+
+```bash
 bin/rails db:prepare
 ```
 
-Install/upgrade GitHub CLI (local):
+### 4. GitHub CLI
+
+Install/upgrade GitHub CLI:
 
 ```bash
 brew install gh
 brew upgrade gh
 ```
 
-Run the dev server:
+### 5. Run the Server
 
 ```bash
 bin/dev
@@ -42,8 +66,10 @@ Admin UI is under:
 ## Tests and lint
 
 ```bash
+# Linting
 bin/rubocop
-export PGHOST=127.0.0.1 PGPORT=5432 PGUSER=postgres PGPASSWORD=
+
+# Tests (dotenv loads .env.local automatically)
 bin/rails db:test:prepare
 bundle exec rspec
 ```
@@ -59,6 +85,12 @@ bin/jobs
 - **Recurring schedules**: defined in `config/recurring.yml` (branch refresh, GH sync, evaluation, cleanup).
 
 ## Environment variables
+
+Environment variables are managed via:
+- **Development/Test**: `dotenv-rails` loads from `.env.local` (copy from `.env.example`)
+- **Production**: Set via your deployment platform (Kamal secrets, Docker env, etc.)
+
+See `.env.example` for all available options with documentation.
 
 ### Admin UI
 Admin auth is **session-based** (single operator). Create the user via console:

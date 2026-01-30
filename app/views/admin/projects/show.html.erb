@@ -1,0 +1,198 @@
+<%= render "admin/shared/nav" %>
+
+<section class="section">
+  <div class="container">
+    <nav class="level mb-5">
+      <div class="level-left">
+        <div class="level-item">
+          <div>
+            <h1 class="title is-4"><%= @project.name %></h1>
+            <p class="subtitle is-6 has-text-grey">
+              <%= link_to @project.upstream_repo, "https://github.com/#{@project.upstream_repo}", target: "_blank" %>
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="level-right">
+        <div class="level-item">
+          <% if @project.enabled? %>
+            <span class="tag is-success is-medium">Enabled</span>
+          <% else %>
+            <span class="tag is-light is-medium">Disabled</span>
+          <% end %>
+        </div>
+        <div class="level-item">
+          <%= link_to edit_admin_project_path(@project), class: "button is-light" do %>
+            <span class="icon"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span>
+            <span>Edit</span>
+          <% end %>
+        </div>
+      </div>
+    </nav>
+
+    <div class="columns">
+      <div class="column is-6">
+        <div class="box">
+          <h2 class="title is-6 mb-4">Configuration</h2>
+          <table class="table is-fullwidth is-narrow">
+            <tr>
+              <th>Slug</th>
+              <td><code><%= @project.slug %></code></td>
+            </tr>
+            <tr>
+              <th>File Type</th>
+              <td><span class="tag is-light"><%= @project.file_type.humanize %></span></td>
+            </tr>
+            <tr>
+              <th>File Path</th>
+              <td><code><%= @project.file_path %></code></td>
+            </tr>
+            <tr>
+              <th>Branch Discovery</th>
+              <td><%= @project.branch_discovery.humanize %></td>
+            </tr>
+            <tr>
+              <th>Fork Repo</th>
+              <td>
+                <% if @project.fork_repo.present? %>
+                  <%= link_to @project.fork_repo, "https://github.com/#{@project.fork_repo}", target: "_blank" %>
+                <% else %>
+                  <span class="has-text-grey">Not configured</span>
+                <% end %>
+              </td>
+            </tr>
+            <tr>
+              <th>Can Create PRs</th>
+              <td>
+                <% if @project.can_create_prs? %>
+                  <span class="tag is-success">Yes</span>
+                <% else %>
+                  <span class="tag is-warning">No</span>
+                  <small class="has-text-grey ml-2">Configure fork to enable</small>
+                <% end %>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="column is-6">
+        <div class="box">
+          <h2 class="title is-6 mb-4">Branch Targets (<%= @branch_targets.count %>)</h2>
+          <% if @branch_targets.any? %>
+            <table class="table is-fullwidth is-narrow">
+              <thead>
+                <tr>
+                  <th>Branch</th>
+                  <th>Status</th>
+                  <th>Enabled</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @branch_targets.each do |bt| %>
+                  <tr>
+                    <td><code><%= bt.name %></code></td>
+                    <td>
+                      <% case bt.maintenance_status %>
+                      <% when "normal" %>
+                        <span class="tag is-success is-light">Normal</span>
+                      <% when "security" %>
+                        <span class="tag is-warning is-light">Security</span>
+                      <% when "eol" %>
+                        <span class="tag is-danger is-light">EOL</span>
+                      <% end %>
+                    </td>
+                    <td>
+                      <% if bt.enabled? %>
+                        <span class="icon has-text-success"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></span>
+                      <% else %>
+                        <span class="icon has-text-grey-light"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+                      <% end %>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          <% else %>
+            <p class="has-text-grey">No branch targets configured.</p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <div class="columns">
+      <div class="column is-6">
+        <div class="box">
+          <h2 class="title is-6 mb-4">Recent Patch Bundles</h2>
+          <% if @recent_bundles.any? %>
+            <table class="table is-fullwidth is-narrow">
+              <thead>
+                <tr>
+                  <th>Gem</th>
+                  <th>Version</th>
+                  <th>State</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @recent_bundles.each do |bundle| %>
+                  <tr>
+                    <td><%= bundle.gem_name %></td>
+                    <td><%= bundle.target_version %></td>
+                    <td><span class="tag is-light"><%= bundle.state.humanize %></span></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          <% else %>
+            <p class="has-text-grey">No patch bundles yet.</p>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="column is-6">
+        <div class="box">
+          <h2 class="title is-6 mb-4">Recent Pull Requests</h2>
+          <% if @recent_prs.any? %>
+            <table class="table is-fullwidth is-narrow">
+              <thead>
+                <tr>
+                  <th>PR</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @recent_prs.each do |pr| %>
+                  <tr>
+                    <td>
+                      <% if pr.pr_url.present? %>
+                        <%= link_to "##{pr.pr_number}", pr.pr_url, target: "_blank" %>
+                      <% else %>
+                        #<%= pr.pr_number %>
+                      <% end %>
+                    </td>
+                    <td>
+                      <% case pr.status %>
+                      <% when "open" %>
+                        <span class="tag is-success is-light">Open</span>
+                      <% when "merged" %>
+                        <span class="tag is-info is-light">Merged</span>
+                      <% when "closed" %>
+                        <span class="tag is-danger is-light">Closed</span>
+                      <% end %>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          <% else %>
+            <p class="has-text-grey">No pull requests yet.</p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <%= link_to "Back to Projects", admin_projects_path, class: "button is-light" %>
+    </div>
+  </div>
+</section>

@@ -1,6 +1,7 @@
 Rails.application.routes.draw do
   root "home#index"
 
+  get "/about", to: "about#index"
   get "/sign_in", to: "sessions#new"
   post "/sign_in", to: "sessions#create"
   delete "/logout", to: "sessions#destroy"
@@ -14,6 +15,7 @@ Rails.application.routes.draw do
     post "dashboard/trigger_advisory_sync", to: "dashboard#trigger_advisory_sync", as: :trigger_advisory_sync
     post "dashboard/trigger_reevaluation", to: "dashboard#trigger_reevaluation", as: :trigger_reevaluation
 
+    resources :projects, only: %i[index show new create edit update]
     resources :branch_targets, only: %i[index edit update]
     resources :candidate_bumps, only: %i[index show update]
     resources :patch_bundles, only: %i[index show update]

@@ -1,0 +1,120 @@
+<%= form_with model: [:admin, project], class: "box" do |f| %>
+  <% if project.errors.any? %>
+    <div class="notification is-danger is-light">
+      <ul>
+        <% project.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="columns">
+    <div class="column is-6">
+      <div class="field">
+        <%= f.label :name, class: "label" %>
+        <div class="control">
+          <%= f.text_field :name, class: "input", placeholder: "Ruby Core" %>
+        </div>
+        <p class="help">Display name for this project.</p>
+      </div>
+    </div>
+    <div class="column is-6">
+      <div class="field">
+        <%= f.label :slug, class: "label" %>
+        <div class="control">
+          <%= f.text_field :slug, class: "input", placeholder: "ruby" %>
+        </div>
+        <p class="help">URL-friendly identifier (lowercase, no spaces).</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="field">
+    <%= f.label :upstream_repo, class: "label" %>
+    <div class="control">
+      <%= f.text_field :upstream_repo, class: "input", placeholder: "ruby/ruby" %>
+    </div>
+    <p class="help">GitHub repository in <code>owner/repo</code> format.</p>
+  </div>
+
+  <div class="columns">
+    <div class="column is-6">
+      <div class="field">
+        <%= f.label :file_type, class: "label" %>
+        <div class="control">
+          <div class="select is-fullwidth">
+            <%= f.select :file_type, Project::FILE_TYPES.map { |t| [t.humanize, t] } %>
+          </div>
+        </div>
+        <p class="help">Type of dependency file to parse.</p>
+      </div>
+    </div>
+    <div class="column is-6">
+      <div class="field">
+        <%= f.label :file_path, class: "label" %>
+        <div class="control">
+          <%= f.text_field :file_path, class: "input", placeholder: "Gemfile.lock" %>
+        </div>
+        <p class="help">Path to the dependency file in the repo.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="field">
+    <%= f.label :branch_discovery, class: "label" %>
+    <div class="control">
+      <div class="select">
+        <%= f.select :branch_discovery, Project::BRANCH_DISCOVERY_METHODS.map { |m| [m.humanize, m] } %>
+      </div>
+    </div>
+    <p class="help">How to discover branches to monitor.</p>
+  </div>
+
+  <hr>
+
+  <h3 class="title is-6">Fork Configuration</h3>
+  <p class="subtitle is-7 has-text-grey mb-4">Required for creating pull requests.</p>
+
+  <div class="columns">
+    <div class="column is-6">
+      <div class="field">
+        <%= f.label :fork_repo, class: "label" %>
+        <div class="control">
+          <%= f.text_field :fork_repo, class: "input", placeholder: "vulnsentry-bot/ruby" %>
+        </div>
+        <p class="help">Your fork of the upstream repo.</p>
+      </div>
+    </div>
+    <div class="column is-6">
+      <div class="field">
+        <%= f.label :fork_git_url, class: "label" %>
+        <div class="control">
+          <%= f.text_field :fork_git_url, class: "input", placeholder: "git@github.com:vulnsentry-bot/ruby.git" %>
+        </div>
+        <p class="help">SSH URL for pushing to the fork.</p>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="field">
+    <div class="control">
+      <label class="checkbox">
+        <%= f.check_box :enabled %>
+        <strong>Enabled</strong>
+      </label>
+    </div>
+    <p class="help">When enabled, this project will be included in vulnerability scans.</p>
+  </div>
+
+  <div class="field is-grouped mt-5">
+    <div class="control">
+      <%= f.submit class: "button is-ruby" %>
+    </div>
+    <div class="control">
+      <%= link_to "Cancel", admin_projects_path, class: "button is-light" %>
+    </div>
+  </div>
+<% end %>

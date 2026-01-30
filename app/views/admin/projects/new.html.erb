@@ -1,0 +1,18 @@
+<%= render "admin/shared/nav" %>
+
+<section class="section">
+  <div class="container">
+    <nav class="level mb-5">
+      <div class="level-left">
+        <div class="level-item">
+          <div>
+            <h1 class="title is-4">New Project</h1>
+            <p class="subtitle is-6 has-text-grey">Add a new open-source project to monitor.</p>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <%= render "form", project: @project %>
+  </div>
+</section>
