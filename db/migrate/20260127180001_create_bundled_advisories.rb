@@ -11,6 +11,6 @@ class CreateBundledAdvisories < ActiveRecord::Migration[8.1]
     end
 
     # Each advisory can only be linked to one PatchBundle per branch
-    add_index :bundled_advisories, [:advisory_id, :patch_bundle_id], unique: true
+    add_index :bundled_advisories, [ :advisory_id, :patch_bundle_id ], unique: true
   end
 end

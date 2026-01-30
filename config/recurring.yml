@@ -30,14 +30,24 @@ production:
     args: [{ scope: "closed" }]
     schedule: every 6 hours
 
+  # Full vulnerability evaluation - runs every 4 hours
+  # Uses caching to reduce API load while checking all gems
   evaluate_osv_vulnerabilities:
     class: EvaluateOsvVulnerabilitiesJob
-    schedule: every day at 3am
+    schedule: every 4 hours
+
+  # Incremental advisory sync - runs hourly
+  # Lightweight check for new advisories only (skips recently-checked gems)
+  sync_new_advisories:
+    class: SyncNewAdvisoriesJob
+    schedule: every hour at minute 30
 
   # Re-evaluate PatchBundles awaiting a fix version
+  # Runs every 4 hours to catch newly released gem versions
   reevaluate_awaiting_fix:
     class: ReevaluateAwaitingFixJob
-    schedule: every day at 4am
+    args: [{ hours_since_last_evaluation: 4 }]
+    schedule: every 4 hours
 
   cleanup_fork_branches:
     class: CleanupForkBranchesJob
@@ -60,14 +70,24 @@ development:
     args: [{ scope: "closed" }]
     schedule: every 6 hours
 
+  # Full vulnerability evaluation - runs every 4 hours
+  # Uses caching to reduce API load while checking all gems
   evaluate_osv_vulnerabilities:
     class: EvaluateOsvVulnerabilitiesJob
-    schedule: every day at 3am
+    schedule: every 4 hours
+
+  # Incremental advisory sync - runs hourly
+  # Lightweight check for new advisories only (skips recently-checked gems)
+  sync_new_advisories:
+    class: SyncNewAdvisoriesJob
+    schedule: every hour at minute 30
 
   # Re-evaluate PatchBundles awaiting a fix version
+  # Runs every 4 hours to catch newly released gem versions
   reevaluate_awaiting_fix:
     class: ReevaluateAwaitingFixJob
-    schedule: every day at 4am
+    args: [{ hours_since_last_evaluation: 4 }]
+    schedule: every 4 hours
 
   cleanup_fork_branches:
     class: CleanupForkBranchesJob

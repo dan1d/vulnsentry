@@ -18,6 +18,7 @@ development:
     port: <%= ENV.fetch("PGPORT", 5432) %>
     username: <%= ENV.fetch("PGUSER", "postgres") %>
     password: <%= ENV.fetch("PGPASSWORD", "") %>
+    sslmode: <%= ENV.fetch("PGSSLMODE", "disable") %>
   cache:
     <<: *default
     database: <%= ENV.fetch("CACHE_DB_NAME", "automatic_patch_development_cache") %>
@@ -26,6 +27,7 @@ development:
     port: <%= ENV.fetch("PGPORT", 5432) %>
     username: <%= ENV.fetch("PGUSER", "postgres") %>
     password: <%= ENV.fetch("PGPASSWORD", "") %>
+    sslmode: <%= ENV.fetch("PGSSLMODE", "disable") %>
   queue:
     <<: *default
     database: <%= ENV.fetch("QUEUE_DB_NAME", "automatic_patch_development_queue") %>
@@ -34,6 +36,7 @@ development:
     port: <%= ENV.fetch("PGPORT", 5432) %>
     username: <%= ENV.fetch("PGUSER", "postgres") %>
     password: <%= ENV.fetch("PGPASSWORD", "") %>
+    sslmode: <%= ENV.fetch("PGSSLMODE", "disable") %>
   cable:
     <<: *default
     database: <%= ENV.fetch("CABLE_DB_NAME", "automatic_patch_development_cable") %>
@@ -42,6 +45,7 @@ development:
     port: <%= ENV.fetch("PGPORT", 5432) %>
     username: <%= ENV.fetch("PGUSER", "postgres") %>
     password: <%= ENV.fetch("PGPASSWORD", "") %>
+    sslmode: <%= ENV.fetch("PGSSLMODE", "disable") %>
 
 # Warning: The database defined as "test" will be erased and
 # re-generated from your development database when you run "rake".
@@ -54,6 +58,7 @@ test:
     port: <%= ENV.fetch("PGPORT", 5432) %>
     username: <%= ENV.fetch("PGUSER", "postgres") %>
     password: <%= ENV.fetch("PGPASSWORD", "") %>
+    sslmode: <%= ENV.fetch("PGSSLMODE", "disable") %>
   cache:
     <<: *default
     database: <%= ENV.fetch("CACHE_DB_NAME", "automatic_patch_test_cache") %>
@@ -62,6 +67,7 @@ test:
     port: <%= ENV.fetch("PGPORT", 5432) %>
     username: <%= ENV.fetch("PGUSER", "postgres") %>
     password: <%= ENV.fetch("PGPASSWORD", "") %>
+    sslmode: <%= ENV.fetch("PGSSLMODE", "disable") %>
   queue:
     <<: *default
     database: <%= ENV.fetch("QUEUE_DB_NAME", "automatic_patch_test_queue") %>
@@ -70,6 +76,7 @@ test:
     port: <%= ENV.fetch("PGPORT", 5432) %>
     username: <%= ENV.fetch("PGUSER", "postgres") %>
     password: <%= ENV.fetch("PGPASSWORD", "") %>
+    sslmode: <%= ENV.fetch("PGSSLMODE", "disable") %>
   cable:
     <<: *default
     database: <%= ENV.fetch("CABLE_DB_NAME", "automatic_patch_test_cable") %>
@@ -78,6 +85,7 @@ test:
     port: <%= ENV.fetch("PGPORT", 5432) %>
     username: <%= ENV.fetch("PGUSER", "postgres") %>
     password: <%= ENV.fetch("PGPASSWORD", "") %>
+    sslmode: <%= ENV.fetch("PGSSLMODE", "disable") %>
 
 # Store production database in the storage/ directory, which by default
 # is mounted as a persistent Docker volume in config/deploy.yml.

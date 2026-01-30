@@ -32,7 +32,7 @@ RSpec.describe "Evaluator per-gem isolation" do
       args[:gem_name] == "rexml" ? [ adv1 ] : [ adv2 ]
     end
 
-    builder = instance_double(Evaluation::CandidateBumpBuilder)
+    builder = instance_double(Evaluation::PatchBundleBuilder)
     allow(builder).to receive(:build!) do |args|
       raise "boom" if args[:entry].name == "rexml"
     end
@@ -40,10 +40,10 @@ RSpec.describe "Evaluator per-gem isolation" do
     evaluator = Evaluation::BundledGemsVulnerabilityEvaluator.new(
       fetcher: fetcher,
       advisory_chain: advisory_chain,
-      candidate_builder: builder
+      patch_bundle_builder: builder
     )
     evaluator.evaluate_branch(branch)
 
-    expect(SystemEvent.where(kind: "candidate_build").count).to eq(1)
+    expect(SystemEvent.where(kind: "patch_bundle_build").count).to eq(1)
   end
 end

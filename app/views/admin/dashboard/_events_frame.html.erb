@@ -1,0 +1,42 @@
+<%# System events Turbo Frame content
+    Local variables:
+    - events: (required) Collection of SystemEvent records
+    - event_filter: (optional) Current filter value
+%>
+<turbo-frame id="system-events-frame">
+  <%= render layout: "shared/box_section", locals: { title: "Recent system events", title_link: admin_system_events_path, scrollable: true } do %>
+    <div class="event-filters mb-3">
+      <div class="field is-grouped">
+        <div class="control">
+          <%= link_to "All", 
+              admin_dashboard_events_path,
+              class: "button is-small #{event_filter.nil? ? 'is-ruby' : 'is-light'}",
+              data: { turbo_frame: "system-events-frame" } %>
+        </div>
+        <div class="control">
+          <%= link_to "Errors", 
+              admin_dashboard_events_path(status: "error"),
+              class: "button is-small #{event_filter == 'error' ? 'is-danger' : 'is-light'}",
+              data: { turbo_frame: "system-events-frame" } %>
+        </div>
+        <div class="control">
+          <%= link_to "Warnings", 
+              admin_dashboard_events_path(status: "warning"),
+              class: "button is-small #{event_filter == 'warning' ? 'is-light has-text-warning' : 'is-light'}",
+              data: { turbo_frame: "system-events-frame" } %>
+        </div>
+        <div class="control">
+          <%= link_to "Success", 
+              admin_dashboard_events_path(status: "ok"),
+              class: "button is-small #{event_filter == 'ok' ? 'is-success' : 'is-light'}",
+              data: { turbo_frame: "system-events-frame" } %>
+        </div>
+      </div>
+    </div>
+    <% if events.any? %>
+      <%= render "admin/dashboard/event_list", events: events %>
+    <% else %>
+      <%= render "shared/empty_state", message: "No events matching the filter." %>
+    <% end %>
+  <% end %>
+</turbo-frame>

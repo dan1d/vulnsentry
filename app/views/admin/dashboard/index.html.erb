@@ -1,7 +1,9 @@
 <%= render "admin/shared/nav" %>
 
 <section class="section">
-  <div class="container">
+  <div class="container" data-controller="dashboard-stats" 
+       data-dashboard-stats-url-value="<%= admin_dashboard_stats_path %>"
+       data-dashboard-stats-interval-value="30000">
     <nav class="level mb-5">
       <div class="level-left">
         <div class="level-item">
@@ -12,6 +14,18 @@
         </div>
       </div>
       <div class="level-right">
+        <div class="level-item">
+          <button class="button is-small is-light" 
+                  data-dashboard-stats-target="refreshButton"
+                  data-action="click->dashboard-stats#refresh">
+            <span class="icon is-small">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/>
+              </svg>
+            </span>
+            <span>Refresh</span>
+          </button>
+        </div>
         <div class="level-item">
           <div class="has-text-right">
             <p class="heading">Safety</p>
@@ -28,18 +42,67 @@
       </div>
     </nav>
 
+    <!-- Stats Cards Row -->
     <div class="columns">
-      <div class="column">
-        <%= render "shared/stat_card", label: "Open PRs", value: @open_prs.count, link_path: admin_pull_requests_path %>
+      <div class="column" data-dashboard-stats-target="stat" data-stat-id="open_prs">
+        <%= render "shared/stat_card", 
+            label: "Open PRs", 
+            value: @open_prs.count, 
+            link_path: admin_pull_requests_path,
+            icon: "open_prs",
+            trend: @open_prs_trend,
+            trend_period: "today",
+            stat_id: "open_prs" %>
       </div>
-      <div class="column">
-        <%= render "shared/stat_card", label: "Branch targets", value: @branch_targets.count, link_path: admin_branch_targets_path %>
+      <div class="column" data-dashboard-stats-target="stat" data-stat-id="branch_targets">
+        <%= render "shared/stat_card", 
+            label: "Branch targets", 
+            value: @branch_targets.count, 
+            link_path: admin_branch_targets_path,
+            icon: "branches",
+            stat_id: "branch_targets" %>
       </div>
-      <div class="column">
-        <%= render "shared/stat_card", label: "Recent candidates", value: @recent_candidates.count, link_path: admin_candidate_bumps_path %>
+      <div class="column" data-dashboard-stats-target="stat" data-stat-id="recent_candidates">
+        <%= render "shared/stat_card", 
+            label: "Recent candidates", 
+            value: @recent_candidates.count, 
+            link_path: admin_candidate_bumps_path,
+            icon: "candidates",
+            trend: @candidates_trend,
+            trend_period: "today",
+            stat_id: "recent_candidates" %>
+      </div>
+      <div class="column" data-dashboard-stats-target="stat" data-stat-id="patch_bundles">
+        <%= render "shared/stat_card", 
+            label: "Patch bundles", 
+            value: @patch_bundles_count, 
+            link_path: admin_patch_bundles_path,
+            icon: "bundles",
+            trend: @bundles_trend,
+            trend_period: "today",
+            stat_id: "patch_bundles" %>
       </div>
     </div>
 
+    <!-- Quick Actions & AI Insights Row -->
+    <div class="columns">
+      <div class="column is-4">
+        <%= render "admin/dashboard/quick_actions",
+            pending_reviews_count: @pending_reviews_count,
+            ai_recommendations_count: @ai_recommendations_count %>
+      </div>
+      <div class="column is-8">
+        <%= render "admin/dashboard/ai_insights",
+            llm_bundles_count: @llm_bundles_count,
+            total_bundles_count: @patch_bundles_count,
+            high_confidence_count: @high_confidence_count,
+            medium_confidence_count: @medium_confidence_count,
+            low_confidence_count: @low_confidence_count,
+            recent_llm_recommendations: @recent_llm_recommendations %>
+      </div>
+    </div>
+
+    <!-- Main Content Row -->
     <div class="columns">
       <div class="column is-half">
         <%= render layout: "shared/box_section", locals: { title: "Recent candidates", title_link: admin_candidate_bumps_path, scrollable: true } do %>
@@ -62,15 +125,46 @@
       </div>
     </div>
 
+    <!-- System Events Row with Turbo Frame -->
     <div class="columns">
       <div class="column is-half">
-        <%= render layout: "shared/box_section", locals: { title: "Recent system events", title_link: admin_system_events_path, scrollable: true } do %>
-          <% if @events.any? %>
-            <%= render "admin/dashboard/event_list", events: @events %>
-          <% else %>
-            <%= render "shared/empty_state", message: "No events yet." %>
+        <turbo-frame id="system-events-frame">
+          <%= render layout: "shared/box_section", locals: { title: "Recent system events", title_link: admin_system_events_path, scrollable: true } do %>
+            <div class="event-filters mb-3">
+              <div class="field is-grouped">
+                <div class="control">
+                  <%= link_to "All", 
+                      admin_dashboard_events_path,
+                      class: "button is-small #{@event_filter.nil? ? 'is-ruby' : 'is-light'}",
+                      data: { turbo_frame: "system-events-frame" } %>
+                </div>
+                <div class="control">
+                  <%= link_to "Errors", 
+                      admin_dashboard_events_path(status: "error"),
+                      class: "button is-small #{@event_filter == 'error' ? 'is-danger' : 'is-light'}",
+                      data: { turbo_frame: "system-events-frame" } %>
+                </div>
+                <div class="control">
+                  <%= link_to "Warnings", 
+                      admin_dashboard_events_path(status: "warning"),
+                      class: "button is-small #{@event_filter == 'warning' ? 'is-warning' : 'is-light'}",
+                      data: { turbo_frame: "system-events-frame" } %>
+                </div>
+                <div class="control">
+                  <%= link_to "Success", 
+                      admin_dashboard_events_path(status: "ok"),
+                      class: "button is-small #{@event_filter == 'ok' ? 'is-success' : 'is-light'}",
+                      data: { turbo_frame: "system-events-frame" } %>
+                </div>
+              </div>
+            </div>
+            <% if @events.any? %>
+              <%= render "admin/dashboard/event_list", events: @events %>
+            <% else %>
+              <%= render "shared/empty_state", message: "No events yet." %>
+            <% end %>
           <% end %>
-        <% end %>
+        </turbo-frame>
       </div>
     </div>
   </div>

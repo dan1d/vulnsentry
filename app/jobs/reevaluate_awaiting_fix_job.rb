@@ -1,6 +1,6 @@
 # Periodic job that finds all PatchBundles in awaiting_fix state
 # and enqueues individual re-evaluation jobs for each.
-# Run daily via recurring.yml
+# Runs every 4 hours via recurring.yml to catch newly released gem versions.
 class ReevaluateAwaitingFixJob < ApplicationJob
   queue_as :low
 

@@ -8,6 +8,12 @@ Rails.application.routes.draw do
   namespace :admin do
     root to: "dashboard#index"
 
+    # Dashboard endpoints
+    get "dashboard/stats", to: "dashboard#stats", as: :dashboard_stats
+    get "dashboard/events", to: "dashboard#events", as: :dashboard_events
+    post "dashboard/trigger_advisory_sync", to: "dashboard#trigger_advisory_sync", as: :trigger_advisory_sync
+    post "dashboard/trigger_reevaluation", to: "dashboard#trigger_reevaluation", as: :trigger_reevaluation
+
     resources :branch_targets, only: %i[index edit update]
     resources :candidate_bumps, only: %i[index show update]
     resources :patch_bundles, only: %i[index show update]

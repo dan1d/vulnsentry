@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_27_180004) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_30_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -38,6 +38,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_27_180004) do
     t.datetime "withdrawn_at"
     t.index ["fingerprint"], name: "index_advisories_on_fingerprint", unique: true
     t.index ["gem_name"], name: "index_advisories_on_gem_name"
+    t.index ["published_at"], name: "index_advisories_on_published_at"
+    t.index ["severity", "published_at"], name: "index_advisories_active_by_severity", where: "(withdrawn_at IS NULL)"
+    t.index ["severity"], name: "index_advisories_on_severity"
+    t.index ["source"], name: "index_advisories_on_source"
   end
 
   create_table "bot_configs", force: :cascade do |t|
@@ -129,8 +133,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_27_180004) do
     t.datetime "updated_at", null: false
     t.index ["branch_target_id", "gem_name", "current_version"], name: "index_patch_bundles_unique_per_branch_gem", unique: true
     t.index ["branch_target_id"], name: "index_patch_bundles_on_branch_target_id"
+    t.index ["created_at"], name: "index_patch_bundles_on_created_at"
     t.index ["gem_name", "base_branch", "state"], name: "index_patch_bundles_on_gem_name_and_base_branch_and_state"
+    t.index ["state", "created_at"], name: "index_patch_bundles_actionable", where: "((state)::text = ANY (ARRAY[('needs_review'::character varying)::text, ('ready_for_review'::character varying)::text]))"
+    t.index ["state", "created_at"], name: "index_patch_bundles_needs_attention", where: "((state)::text = ANY (ARRAY[('blocked_rate_limited'::character varying)::text, ('rejected'::character varying)::text, ('failed'::character varying)::text]))"
     t.index ["state", "last_evaluated_at"], name: "index_patch_bundles_for_reevaluation"
+    t.index ["state"], name: "index_patch_bundles_on_state"
   end
 
   create_table "pull_requests", force: :cascade do |t|
@@ -171,6 +179,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_27_180004) do
     t.string "status", null: false
     t.datetime "updated_at", null: false
     t.index ["kind", "occurred_at"], name: "index_system_events_on_kind_and_occurred_at"
+    t.index ["occurred_at"], name: "index_system_events_on_occurred_at"
+    t.index ["payload"], name: "index_system_events_on_payload_gin", using: :gin
     t.index ["status", "occurred_at"], name: "index_system_events_on_status_and_occurred_at"
   end
 

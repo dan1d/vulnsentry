@@ -82,7 +82,7 @@ class RefreshBranchTargetsJob < ApplicationJob
 
     def mark_unseen_as_eol!(seen_names, now)
       stale = BranchTarget
-        .where.not(name: seen_names + ["master"])
+        .where.not(name: seen_names + [ "master" ])
         .where.not(maintenance_status: "eol")
 
       stale.find_each do |row|

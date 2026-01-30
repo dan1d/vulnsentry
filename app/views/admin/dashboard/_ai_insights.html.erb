@@ -1,0 +1,103 @@
+<%# AI Insights panel for dashboard
+    Local variables:
+    - llm_bundles_count: (required) Count of PatchBundles using LLM resolution
+    - total_bundles_count: (required) Total PatchBundles count
+    - high_confidence_count: (required) Count with high LLM confidence
+    - medium_confidence_count: (required) Count with medium LLM confidence
+    - low_confidence_count: (required) Count with low LLM confidence
+    - recent_llm_recommendations: (required) Recent PatchBundles with LLM resolution
+%>
+<div class="box ai-insights-panel" data-controller="ai-insights">
+  <div class="is-flex is-justify-content-space-between is-align-items-center mb-4">
+    <div class="is-flex is-align-items-center">
+      <span class="icon has-text-ruby mr-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2a4 4 0 0 1 4 4v1a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2V6a4 4 0 0 1 4-4z"/>
+          <path d="M9 18h6"/>
+          <path d="M10 22h4"/>
+          <circle cx="9" cy="7" r="1"/>
+          <circle cx="15" cy="7" r="1"/>
+        </svg>
+      </span>
+      <p class="has-text-weight-medium">AI Insights</p>
+    </div>
+    <span class="tag is-ruby is-light">
+      <%= llm_bundles_count %>/<%= total_bundles_count %> LLM resolved
+    </span>
+  </div>
+
+  <!-- Confidence Breakdown -->
+  <div class="mb-5">
+    <p class="heading mb-3">LLM Confidence Breakdown</p>
+    <div class="confidence-bars">
+      <% total = [high_confidence_count + medium_confidence_count + low_confidence_count, 1].max %>
+      <% high_pct = (high_confidence_count.to_f / total * 100).round %>
+      <% medium_pct = (medium_confidence_count.to_f / total * 100).round %>
+      <% low_pct = (low_confidence_count.to_f / total * 100).round %>
+      
+      <div class="confidence-bar-container mb-2">
+        <div class="confidence-bar">
+          <% if high_pct > 0 %>
+            <div class="confidence-segment is-high" style="width: <%= high_pct %>%;" title="High: <%= high_confidence_count %>"></div>
+          <% end %>
+          <% if medium_pct > 0 %>
+            <div class="confidence-segment is-medium" style="width: <%= medium_pct %>%;" title="Medium: <%= medium_confidence_count %>"></div>
+          <% end %>
+          <% if low_pct > 0 %>
+            <div class="confidence-segment is-low" style="width: <%= low_pct %>%;" title="Low: <%= low_confidence_count %>"></div>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="is-flex is-justify-content-space-between is-size-7">
+        <div class="is-flex is-align-items-center">
+          <span class="confidence-dot is-high mr-1"></span>
+          <span class="has-text-grey">High (<%= high_confidence_count %>)</span>
+        </div>
+        <div class="is-flex is-align-items-center">
+          <span class="confidence-dot is-medium mr-1"></span>
+          <span class="has-text-grey">Medium (<%= medium_confidence_count %>)</span>
+        </div>
+        <div class="is-flex is-align-items-center">
+          <span class="confidence-dot is-low mr-1"></span>
+          <span class="has-text-grey">Low (<%= low_confidence_count %>)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent LLM Recommendations -->
+  <div>
+    <p class="heading mb-3">Recent LLM Recommendations</p>
+    <% if recent_llm_recommendations.any? %>
+      <div class="content is-small">
+        <% recent_llm_recommendations.each do |bundle| %>
+          <div class="ai-recommendation-item mb-3">
+            <div class="is-flex is-justify-content-space-between is-align-items-start">
+              <div>
+                <%= link_to admin_patch_bundle_path(bundle), class: "has-text-weight-medium" do %>
+                  <code><%= bundle.gem_name %></code>
+                <% end %>
+                <span class="has-text-grey is-size-7 ml-2"><%= bundle.bump_display %></span>
+              </div>
+              <div class="is-flex is-align-items-center">
+                <% if bundle.llm_confidence.present? %>
+                  <span class="confidence-badge is-<%= bundle.llm_confidence %>">
+                    <%= bundle.llm_confidence %>
+                  </span>
+                <% end %>
+              </div>
+            </div>
+            <% if bundle.llm_rationale.present? %>
+              <p class="has-text-grey is-size-7 mt-1 has-text-overflow-ellipsis" style="max-width: 100%;">
+                <%= truncate(bundle.llm_rationale, length: 100) %>
+              </p>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <%= render "shared/empty_state", message: "No LLM recommendations yet." %>
+    <% end %>
+  </div>
+</div>

@@ -184,7 +184,7 @@ module Evaluation
 
     def resolve_target_version(bundle, entry, suggested_versions)
       current = Gem::Version.new(entry.version)
-      parsed = suggested_versions.map { |v| [v, Gem::Version.new(v)] rescue nil }.compact.to_h
+      parsed = suggested_versions.map { |v| [ v, Gem::Version.new(v) ] rescue nil }.compact.to_h
 
       return { state: :awaiting_fix } if parsed.empty?
 

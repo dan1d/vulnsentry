@@ -64,9 +64,13 @@ RSpec.describe EvaluateOsvVulnerabilitiesJob, type: :job do
     advisory = Advisory.find_by!(fingerprint: "osv:OSV-TEST-1")
     expect(advisory.gem_name).to eq("rexml")
 
-    bump = CandidateBump.find_by!(advisory: advisory, base_branch: "master", gem_name: "rexml", target_version: "3.4.5")
-    expect(bump.state).to eq("ready_for_review")
-    expect(bump.proposed_diff).to include("-rexml 3.4.4")
-    expect(bump.proposed_diff).to include("+rexml 3.4.5")
+    # PatchBundle is now the main entity (replaced CandidateBump)
+    bundle = PatchBundle.find_by!(base_branch: "master", gem_name: "rexml", target_version: "3.4.5")
+    expect(bundle.state).to eq("ready_for_review")
+    expect(bundle.proposed_diff).to include("-rexml 3.4.4")
+    expect(bundle.proposed_diff).to include("+rexml 3.4.5")
+
+    # Advisory is linked via BundledAdvisory
+    expect(bundle.bundled_advisories.map(&:advisory)).to include(advisory)
   end
 end

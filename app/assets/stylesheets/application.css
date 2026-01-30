@@ -466,3 +466,277 @@ hr {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
 }
+
+/* ========================================
+   Stat Cards - Enhanced
+   ======================================== */
+.stat-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.stat-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.stat-icon svg {
+  color: var(--ruby-red);
+  opacity: 0.8;
+}
+
+.stat-value-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stat-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.stat-trend.is-positive {
+  background-color: rgba(72, 199, 116, 0.15);
+  color: var(--success);
+}
+
+.stat-trend.is-negative {
+  background-color: rgba(241, 70, 104, 0.15);
+  color: var(--danger);
+}
+
+.trend-icon {
+  display: flex;
+  align-items: center;
+}
+
+.trend-period {
+  color: var(--text-muted);
+  margin-left: 0.25rem;
+}
+
+/* Stat card pulse animations */
+@keyframes pulse-up {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(72, 199, 116, 0.4); }
+}
+
+@keyframes pulse-down {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(241, 70, 104, 0.4); }
+}
+
+.stat-pulse-up {
+  animation: pulse-up 0.6s ease;
+}
+
+.stat-pulse-down {
+  animation: pulse-down 0.6s ease;
+}
+
+/* ========================================
+   AI Insights Panel
+   ======================================== */
+.ai-insights-panel {
+  border-left: 3px solid var(--ruby-red);
+}
+
+.has-text-ruby {
+  color: var(--ruby-red) !important;
+}
+
+/* Confidence bars */
+.confidence-bar-container {
+  width: 100%;
+}
+
+.confidence-bar {
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  background-color: var(--bg-tertiary);
+}
+
+.confidence-segment {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.confidence-segment.is-high {
+  background-color: var(--success);
+}
+
+.confidence-segment.is-medium {
+  background-color: var(--warning);
+}
+
+.confidence-segment.is-low {
+  background-color: var(--danger);
+}
+
+/* Confidence dots */
+.confidence-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.confidence-dot.is-high {
+  background-color: var(--success);
+}
+
+.confidence-dot.is-medium {
+  background-color: var(--warning);
+}
+
+.confidence-dot.is-low {
+  background-color: var(--danger);
+}
+
+/* Confidence badge */
+.confidence-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.confidence-badge.is-high {
+  background-color: rgba(72, 199, 116, 0.2);
+  color: var(--success);
+}
+
+.confidence-badge.is-medium {
+  background-color: rgba(255, 221, 87, 0.2);
+  color: var(--warning);
+}
+
+.confidence-badge.is-low {
+  background-color: rgba(241, 70, 104, 0.2);
+  color: var(--danger);
+}
+
+/* AI Recommendation items */
+.ai-recommendation-item {
+  padding: 0.75rem;
+  background-color: var(--bg-tertiary);
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  transition: border-color 0.2s ease;
+}
+
+.ai-recommendation-item:hover {
+  border-color: var(--ruby-red);
+}
+
+.ai-recommendation-item.is-expanded {
+  background-color: var(--bg-secondary);
+}
+
+/* ========================================
+   Quick Actions Panel
+   ======================================== */
+.quick-actions-panel {
+  height: 100%;
+}
+
+.quick-action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.quick-action-btn {
+  justify-content: flex-start !important;
+  height: auto;
+  padding: 0.75rem 1rem;
+  white-space: normal;
+}
+
+.quick-action-btn .icon {
+  margin-right: 0.5rem;
+}
+
+.quick-action-btn .tag {
+  margin-left: auto;
+}
+
+/* ========================================
+   Event Filters
+   ======================================== */
+.event-filters {
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.event-filters .button {
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* ========================================
+   Turbo Frame Loading State
+   ======================================== */
+turbo-frame[busy] {
+  position: relative;
+}
+
+turbo-frame[busy]::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 15, 26, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+/* ========================================
+   Loading Button State
+   ======================================== */
+.button.is-loading {
+  color: transparent !important;
+  pointer-events: none;
+}
+
+.button.is-loading::after {
+  animation: spinAround 500ms infinite linear;
+  border: 2px solid var(--border-light);
+  border-radius: 9999px;
+  border-right-color: transparent;
+  border-top-color: transparent;
+  content: "";
+  display: block;
+  height: 1em;
+  position: absolute;
+  width: 1em;
+}
+
+@keyframes spinAround {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(359deg); }
+}

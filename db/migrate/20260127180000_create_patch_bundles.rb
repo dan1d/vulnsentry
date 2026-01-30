@@ -23,9 +23,9 @@ class CreatePatchBundles < ActiveRecord::Migration[8.1]
     end
 
     # One PatchBundle per branch + gem + current_version
-    add_index :patch_bundles, [:branch_target_id, :gem_name, :current_version],
+    add_index :patch_bundles, [ :branch_target_id, :gem_name, :current_version ],
               unique: true, name: "index_patch_bundles_unique_per_branch_gem"
-    add_index :patch_bundles, [:gem_name, :base_branch, :state]
-    add_index :patch_bundles, [:state, :last_evaluated_at], name: "index_patch_bundles_for_reevaluation"
+    add_index :patch_bundles, [ :gem_name, :base_branch, :state ]
+    add_index :patch_bundles, [ :state, :last_evaluated_at ], name: "index_patch_bundles_for_reevaluation"
   end
 end

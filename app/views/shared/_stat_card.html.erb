@@ -3,12 +3,74 @@
     - label: (required) The stat label
     - value: (required) The stat value
     - link_path: (optional) Path to link to
+    - trend: (optional) Trend value (e.g., +3 or -2)
+    - trend_period: (optional) Trend period text (e.g., "today", "this week")
+    - icon: (optional) Icon name for the stat (open_prs, branches, candidates, bundles)
+    - stat_id: (optional) ID for live updates via Stimulus
 %>
-<div class="box has-text-centered">
-  <p class="heading"><%= label %></p>
-  <% if local_assigns[:link_path] %>
-    <%= link_to value, link_path, class: "title is-3" %>
-  <% else %>
-    <p class="title is-3"><%= value %></p>
+<div class="box stat-card has-text-centered" 
+     <%= "data-stat-id=#{stat_id}" if local_assigns[:stat_id] %>>
+  <% if local_assigns[:icon] %>
+    <div class="stat-icon mb-2">
+      <% case icon.to_s %>
+      <% when "open_prs" %>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="18" cy="18" r="3"/>
+          <circle cx="6" cy="6" r="3"/>
+          <path d="M13 6h3a2 2 0 0 1 2 2v7"/>
+          <line x1="6" y1="9" x2="6" y2="21"/>
+        </svg>
+      <% when "branches" %>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="6" y1="3" x2="6" y2="15"/>
+          <circle cx="18" cy="6" r="3"/>
+          <circle cx="6" cy="18" r="3"/>
+          <path d="M18 9a9 9 0 0 1-9 9"/>
+        </svg>
+      <% when "candidates" %>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="12" y1="18" x2="12" y2="12"/>
+          <line x1="9" y1="15" x2="15" y2="15"/>
+        </svg>
+      <% when "bundles" %>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+          <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+          <line x1="12" y1="22.08" x2="12" y2="12"/>
+        </svg>
+      <% end %>
+    </div>
   <% end %>
+  
+  <p class="heading"><%= label %></p>
+  
+  <div class="stat-value-container">
+    <% if local_assigns[:link_path] %>
+      <%= link_to value, link_path, class: "title is-3 stat-value" %>
+    <% else %>
+      <p class="title is-3 stat-value"><%= value %></p>
+    <% end %>
+    
+    <% if local_assigns[:trend] && trend != 0 %>
+      <div class="stat-trend <%= trend.to_i > 0 ? 'is-positive' : 'is-negative' %>">
+        <span class="trend-icon">
+          <% if trend.to_i > 0 %>
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="18 15 12 9 6 15"/>
+            </svg>
+          <% else %>
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          <% end %>
+        </span>
+        <span class="trend-value"><%= trend.to_i > 0 ? "+#{trend}" : trend %></span>
+        <% if local_assigns[:trend_period] %>
+          <span class="trend-period"><%= trend_period %></span>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
 </div>

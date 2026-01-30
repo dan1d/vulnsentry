@@ -45,6 +45,22 @@ RSpec.configure do |config|
   # instead of true.
   config.use_transactional_fixtures = true
 
+  # Disable caching for API clients in tests by default.
+  # Tests that want to verify caching behavior should explicitly enable it.
+  config.before(:each) do
+    Osv::Client.disable_cache! if defined?(Osv::Client)
+    Ghsa::Client.disable_cache! if defined?(Ghsa::Client)
+    RubyCore::BundledGemsFetcher.disable_cache! if defined?(RubyCore::BundledGemsFetcher)
+    RubyLang::NewsRss.disable_cache! if defined?(RubyLang::NewsRss)
+  end
+
+  config.after(:each) do
+    Osv::Client.enable_cache! if defined?(Osv::Client)
+    Ghsa::Client.enable_cache! if defined?(Ghsa::Client)
+    RubyCore::BundledGemsFetcher.enable_cache! if defined?(RubyCore::BundledGemsFetcher)
+    RubyLang::NewsRss.enable_cache! if defined?(RubyLang::NewsRss)
+  end
+
   # You can uncomment this line to turn off ActiveRecord support entirely.
   # config.use_active_record = false
 

@@ -4,4 +4,3 @@ class AddCommentSnapshotsToPullRequests < ActiveRecord::Migration[8.1]
     add_column :pull_requests, :comments_last_synced_at, :datetime
   end
 end
-

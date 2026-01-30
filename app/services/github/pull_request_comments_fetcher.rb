@@ -66,4 +66,3 @@ module Github
       end
   end
 end
-

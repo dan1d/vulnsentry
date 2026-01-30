@@ -1,6 +1,8 @@
 require "rails_helper"
 
 RSpec.describe Ghsa::Client do
+  # Caching is disabled globally in rails_helper.rb
+
   it "parses vulnerabilities from gh graphql response" do
     gh = instance_double(Github::GhCli)
     allow(gh).to receive(:json!).and_return(
@@ -15,7 +17,9 @@ RSpec.describe Ghsa::Client do
                 "permalink" => "https://github.com/advisories/GHSA-xxxx-yyyy-zzzz",
                 "identifiers" => [
                   { "type" => "CVE", "value" => "CVE-2026-0001" }
-                ]
+                ],
+                "publishedAt" => "2026-01-01T00:00:00Z",
+                "updatedAt" => "2026-01-15T00:00:00Z"
               },
               "package" => { "name" => "rexml", "ecosystem" => "RUBYGEMS" }
             }
@@ -30,5 +34,7 @@ RSpec.describe Ghsa::Client do
     expect(vulns.first["ghsaId"]).to eq("GHSA-xxxx-yyyy-zzzz")
     expect(vulns.first["cve"]).to eq("CVE-2026-0001")
     expect(vulns.first["firstPatchedVersion"]).to eq("3.4.5")
+    expect(vulns.first["publishedAt"]).to eq("2026-01-01T00:00:00Z")
+    expect(vulns.first["updatedAt"]).to eq("2026-01-15T00:00:00Z")
   end
 end
