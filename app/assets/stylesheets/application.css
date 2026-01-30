@@ -797,6 +797,12 @@ turbo-frame[busy]::after {
 .button.is-loading {
   color: transparent !important;
   pointer-events: none;
+  position: relative;
+}
+
+/* Hide the button content when loading */
+.button.is-loading > * {
+  visibility: hidden;
 }
 
 .button.is-loading::after {
@@ -808,8 +814,20 @@ turbo-frame[busy]::after {
   content: "";
   display: block;
   height: 1em;
-  position: absolute;
   width: 1em;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  margin-left: -0.5em;
+  margin-top: -0.5em;
+}
+
+/* Ruby button loading state needs ruby-colored spinner */
+.button.is-ruby.is-loading::after,
+.button.is-ruby.is-outlined.is-loading::after {
+  border-color: var(--ruby-red);
+  border-right-color: transparent;
+  border-top-color: transparent;
 }
 
 @keyframes spinAround {
