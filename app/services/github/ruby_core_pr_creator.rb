@@ -357,11 +357,17 @@ module Github
         target_version = bundle.target_version
 
         within_repo(repo_dir) do
+          # Get original version before updating
+          original_lockfile = File.read("Gemfile.lock")
+          original_file = ProjectFiles::GemfileLockFile.new(original_lockfile)
+          original_entry = original_file.find_entry(gem_name)
+          original_version = original_entry ? GemVersionNormalizer.normalize(original_entry.version) : nil
+
           # Run bundle commands (try Docker first, fall back to local)
           run_bundle_command!("lock", "--add-platform", "x86_64-linux", "aarch64-linux", "arm64-darwin", "x86_64-darwin", repo_dir: repo_dir)
           run_bundle_command!("update", gem_name, "--conservative", repo_dir: repo_dir)
 
-          # Verify the gem was updated to the expected version
+          # Check updated version
           lockfile_content = File.read("Gemfile.lock")
           file = ProjectFiles::GemfileLockFile.new(lockfile_content)
           entry = file.find_entry(gem_name)
@@ -371,8 +377,17 @@ module Github
           end
 
           actual_version = GemVersionNormalizer.normalize(entry.version)
-          unless Gem::Version.new(actual_version) >= Gem::Version.new(target_version)
-            raise Error, "bundle update did not reach target version: got #{actual_version}, expected >= #{target_version}"
+          actual_gem_ver = Gem::Version.new(actual_version)
+          target_gem_ver = Gem::Version.new(target_version)
+
+          # Accept if we reached target OR improved from original
+          if actual_gem_ver >= target_gem_ver
+            Rails.logger.info "#{gem_name} updated to #{actual_version} (target: #{target_version})"
+          elsif original_version && actual_gem_ver > Gem::Version.new(original_version)
+            # Gemfile constraints prevented reaching target, but we improved
+            Rails.logger.warn "#{gem_name} updated to #{actual_version} (target: #{target_version}, original: #{original_version}) - Gemfile constraints may prevent reaching target"
+          else
+            raise Error, "bundle update did not improve version: got #{actual_version}, original: #{original_version}, target: #{target_version}"
           end
 
           # Check what changed
