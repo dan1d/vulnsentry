@@ -22,14 +22,7 @@ class RefreshBranchTargetsJob < ApplicationJob
     when "ruby_lang"
       refresh_ruby_lang_branches(project)
     when "github_releases"
-      # TODO: Implement GitHub releases-based branch discovery
-      SystemEvent.create!(
-        kind: "branch_refresh",
-        status: "ok",
-        message: "Skipped branch refresh for #{project.name} (github_releases not implemented)",
-        payload: { project: project.slug, discovery_method: project.branch_discovery },
-        occurred_at: Time.current
-      )
+      refresh_github_branches(project)
     when "manual"
       # Manual projects don't auto-discover branches
       SystemEvent.create!(
@@ -47,6 +40,98 @@ class RefreshBranchTargetsJob < ApplicationJob
         payload: { project: project.slug, discovery_method: project.branch_discovery },
         occurred_at: Time.current
       )
+    end
+  end
+
+  def refresh_github_branches(project)
+    fetcher = Github::BranchesFetcher.new
+    branches = fetcher.fetch_rails_stable_branches(repo: project.upstream_repo)
+
+    upsert_github_branches(project, branches)
+
+    SystemEvent.create!(
+      kind: "branch_refresh",
+      status: "ok",
+      message: "Updated branch targets for #{project.name} from GitHub",
+      payload: { project: project.slug, count: branches.count, branches: branches.map(&:name) },
+      occurred_at: Time.current
+    )
+  rescue Github::BranchesFetcher::FetchError => e
+    SystemEvent.create!(
+      kind: "branch_refresh",
+      status: "failed",
+      message: e.message,
+      payload: { project: project.slug, class: e.class.name },
+      occurred_at: Time.current
+    )
+    raise
+  end
+
+  def upsert_github_branches(project, branches)
+    now = Time.current
+    source_url = "https://github.com/#{project.upstream_repo}/branches"
+    seen_names = []
+
+    ActiveRecord::Base.transaction do
+      branches.each do |branch|
+        seen_names << branch.name
+        row = project.branch_targets.find_or_initialize_by(name: branch.name)
+
+        # Determine maintenance status based on branch position
+        # Main/master is always "normal", older stable branches are "security"
+        row.maintenance_status = determine_maintenance_status(branch.name, branches)
+        row.source_url = source_url
+        row.last_seen_at = now
+        row.last_checked_at = now
+        row.enabled = true if row.new_record?
+        row.save!
+      end
+
+      # Mark branches not seen as EOL
+      mark_unseen_github_branches_as_eol!(project, seen_names, now)
+    end
+
+    reject_eol_candidates!(project)
+  end
+
+  def determine_maintenance_status(branch_name, all_branches)
+    # Main/master branch is always normal
+    return "normal" if branch_name == "main" || branch_name == "master"
+
+    # Get all stable branches sorted by version (newest first)
+    stable_branches = all_branches
+                        .select { |b| b.name.match?(/^\d+-\d+-stable$/) }
+                        .sort_by { |b| version_to_array(b.name) }
+                        .reverse
+
+    return "normal" if stable_branches.empty?
+
+    # Find position of this branch
+    position = stable_branches.find_index { |b| b.name == branch_name }
+    return "normal" unless position
+
+    # Newest 2 stable branches are "normal", rest are "security"
+    # Example: 7-2-stable, 7-1-stable = normal; 7-0-stable, 6-1-stable = security
+    position < 2 ? "normal" : "security"
+  end
+
+  def version_to_array(branch_name)
+    match = branch_name.match(/^(\d+)-(\d+)-stable$/)
+    return [ 0, 0 ] unless match
+
+    [ match[1].to_i, match[2].to_i ]
+  end
+
+  def mark_unseen_github_branches_as_eol!(project, seen_names, now)
+    stale = project.branch_targets
+                   .where.not(name: seen_names)
+                   .where.not(maintenance_status: "eol")
+
+    stale.find_each do |row|
+      row.maintenance_status = "eol"
+      row.enabled = false
+      row.last_checked_at = now
+      row.save!
     end
   end
 

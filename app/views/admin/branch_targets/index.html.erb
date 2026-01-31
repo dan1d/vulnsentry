@@ -9,23 +9,36 @@
           subtitle: "Enable/disable supported branches." %>
       </div>
       <div class="level-right">
-        <%= button_to "Refresh from ruby-lang.org",
-              refresh_branches_admin_settings_path,
-              method: :post,
-              class: "button is-info",
-              data: { turbo_confirm: "This will fetch the latest branch statuses from ruby-lang.org and mark old branches as EOL. Continue?" } %>
+        <div class="level-item">
+          <%= button_to "Refresh All Projects",
+                refresh_branches_admin_settings_path,
+                method: :post,
+                class: "button is-info",
+                data: { turbo_confirm: "This will refresh branch statuses for all enabled projects. Continue?" } %>
+        </div>
       </div>
     </div>
 
     <%= render layout: "shared/filter_form", locals: { url: admin_branch_targets_path, clear_path: admin_branch_targets_path } do %>
+      <%= render "shared/filter_field", label: "Project", name: :project_id, value: params[:project_id], type: :select, options: @projects.map { |p| [p.name, p.id] } %>
       <%= render "shared/filter_field", label: "Enabled", name: :enabled, value: params[:enabled], type: :select, options: [["true", "true"], ["false", "false"]] %>
       <%= render "shared/filter_field", label: "Maintenance status", name: :maintenance_status, value: params[:maintenance_status], type: :select, options: BranchTarget::MAINTENANCE_STATUSES %>
+    <% end %>
+
+    <% if @selected_project %>
+      <div class="notification is-info is-light">
+        Showing branches for <strong><%= @selected_project.name %></strong>
+        (<%= link_to @selected_project.upstream_repo, "https://github.com/#{@selected_project.upstream_repo}", target: "_blank" %>)
+        &mdash;
+        <%= link_to "View all projects", admin_branch_targets_path %>
+      </div>
     <% end %>
 
     <div class="box">
       <table class="table is-fullwidth is-hoverable">
         <thead>
           <tr>
+            <th>Project</th>
             <th>Branch</th>
             <th>Status</th>
             <th>Enabled</th>
@@ -35,6 +48,9 @@
         <tbody>
           <% @branch_targets.each do |bt| %>
             <tr>
+              <td>
+                <%= link_to bt.project.name, admin_project_path(bt.project), class: "has-text-weight-medium" %>
+              </td>
               <td class="is-family-monospace"><%= bt.name %></td>
               <td><%= bt.maintenance_status %></td>
               <td><%= render "shared/status_tag", status: bt.enabled?.to_s, size: "small" %></td>
@@ -45,6 +61,17 @@
           <% end %>
         </tbody>
       </table>
+
+      <% if @branch_targets.empty? %>
+        <div class="has-text-centered has-text-grey py-6">
+          <% if @selected_project %>
+            <p>No branch targets for <%= @selected_project.name %>.</p>
+            <p>Run "Refresh All Projects" to discover branches.</p>
+          <% else %>
+            <p>No branch targets found.</p>
+          <% end %>
+        </div>
+      <% end %>
     </div>
 
     <%= render "shared/pagination", collection: @branch_targets %>

@@ -78,7 +78,20 @@
 
       <div class="column is-6">
         <div class="box">
-          <h2 class="title is-6 mb-4">Branch Targets (<%= @branch_targets.count %>)</h2>
+          <div class="level mb-4">
+            <div class="level-left">
+              <h2 class="title is-6 mb-0">Branch Targets (<%= @branch_targets.count %>)</h2>
+            </div>
+            <div class="level-right">
+              <%= button_to refresh_branches_admin_project_path(@project),
+                    method: :post,
+                    class: "button is-small is-info is-light",
+                    data: { turbo_confirm: "Refresh branches for #{@project.name}?" } do %>
+                <span class="icon is-small"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span>
+                <span>Refresh</span>
+              <% end %>
+            </div>
+          </div>
           <% if @branch_targets.any? %>
             <table class="table is-fullwidth is-narrow">
               <thead>
@@ -114,7 +127,10 @@
               </tbody>
             </table>
           <% else %>
-            <p class="has-text-grey">No branch targets configured.</p>
+            <div class="has-text-centered has-text-grey py-4">
+              <p>No branch targets configured.</p>
+              <p class="is-size-7 mt-2">Click "Refresh" to discover branches from GitHub.</p>
+            </div>
           <% end %>
         </div>
       </div>

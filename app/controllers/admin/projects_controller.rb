@@ -2,7 +2,7 @@
 
 module Admin
   class ProjectsController < BaseController
-    before_action :set_project, only: %i[show edit update]
+    before_action :set_project, only: %i[show edit update refresh_branches]
 
     def index
       @projects = Project.order(:name)
@@ -37,6 +37,11 @@ module Admin
       else
         render :edit, status: :unprocessable_entity
       end
+    end
+
+    def refresh_branches
+      RefreshBranchTargetsJob.perform_later(project_slug: @project.slug)
+      redirect_to admin_project_path(@project), notice: "Branch refresh started for #{@project.name}."
     end
 
     private
