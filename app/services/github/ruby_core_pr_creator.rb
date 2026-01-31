@@ -155,10 +155,18 @@ module Github
 
       # Project-aware commit using project's file_path
       def commit_for_bundle!(repo_dir, bundle)
-        file_path = @project&.file_path || "gems/bundled_gems"
         message = commit_message_for_bundle(bundle)
         within_repo(repo_dir) do
-          run_git!("add", file_path)
+          if @project&.file_type == "gemfile_lock"
+            # For Gemfile.lock projects, add both Gemfile.lock (and Gemfile if changed)
+            run_git!("add", "Gemfile.lock")
+            # Only add Gemfile if it was modified (shouldn't be for version bump)
+            gemfile_changed = run_git!("diff", "--cached", "--name-only").include?("Gemfile")
+            run_git!("add", "Gemfile") if gemfile_changed
+          else
+            file_path = @project&.file_path || "gems/bundled_gems"
+            run_git!("add", file_path)
+          end
           run_git!("commit", "-m", message)
         end
       end
@@ -336,7 +344,50 @@ module Github
       # PatchBundle-specific methods
 
       def apply_bundle_bump!(repo_dir, bundle)
-        # Use project's file_path for multi-project support
+        if @project&.file_type == "gemfile_lock"
+          apply_gemfile_lock_bump!(repo_dir, bundle)
+        else
+          apply_bundled_gems_bump!(repo_dir, bundle)
+        end
+      end
+
+      # For Gemfile.lock projects: run bundle update to properly update the lockfile
+      def apply_gemfile_lock_bump!(repo_dir, bundle)
+        gem_name = bundle.gem_name
+        target_version = bundle.target_version
+
+        within_repo(repo_dir) do
+          # First, add all platforms to ensure CI works
+          run_bundle!("lock", "--add-platform", "x86_64-linux", "aarch64-linux", "arm64-darwin", "x86_64-darwin")
+
+          # Update the specific gem to the target version
+          # Use conservative update to minimize transitive dependency changes
+          run_bundle!("update", gem_name, "--conservative")
+
+          # Verify the gem was updated to the expected version
+          lockfile_content = File.read("Gemfile.lock")
+          file = ProjectFiles::GemfileLockFile.new(lockfile_content)
+          entry = file.find_entry(gem_name)
+
+          unless entry
+            raise Error, "gem #{gem_name} not found in Gemfile.lock after bundle update"
+          end
+
+          actual_version = entry.version
+          unless Gem::Version.new(actual_version) >= Gem::Version.new(target_version)
+            raise Error, "bundle update did not reach target version: got #{actual_version}, expected >= #{target_version}"
+          end
+
+          # Check what changed
+          diff = run_git!("diff", "--name-only").strip
+          unless diff.include?("Gemfile.lock")
+            raise Error, "Gemfile.lock was not modified by bundle update"
+          end
+        end
+      end
+
+      # For bundled_gems files: use text replacement
+      def apply_bundled_gems_bump!(repo_dir, bundle)
         file_path = @project&.file_path || "gems/bundled_gems"
         path = File.join(repo_dir, file_path)
         old_content = File.read(path)
@@ -357,14 +408,20 @@ module Github
         end
       end
 
+      def run_bundle!(*args)
+        cmd = [ "bundle", *args ]
+        stdout, stderr, status = Open3.capture3(*cmd)
+        return stdout if status.success?
+        raise Error, "bundle failed: #{cmd.join(' ')}: #{stderr.strip}"
+      end
+
       def bump_for_project(old_content, bundle)
         case @project&.file_type
         when "gemfile_lock"
-          ProjectFiles::GemfileLockBumper.bump!(
-            old_content: old_content,
-            gem_name: bundle.gem_name,
-            target_version: bundle.target_version
-          )
+          # For Gemfile.lock, we don't use text replacement here
+          # Instead, we run bundle update in apply_bundle_bump!
+          # This method is only called for bundled_gems
+          raise Error, "bump_for_project should not be called for gemfile_lock"
         else
           # Default to bundled_gems format (Ruby Core)
           begin
