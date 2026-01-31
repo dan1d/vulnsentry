@@ -509,8 +509,23 @@ module Github
         lines = []
         lines << "## Summary"
         lines << "- Security bump for #{file_type_label} `#{bundle.gem_name}`."
-        lines << "- Scope: version bump only (`#{file_path}`)."
+        lines << "- Version: `#{bundle.current_version}` → `#{bundle.target_version}`"
+        lines << "- Scope: `#{file_path}`"
         lines << ""
+
+        # Add LLM reasoning if available
+        if bundle.llm_recommendation.present? && bundle.llm_recommendation["reasoning"].present?
+          lines << "## Version Selection Reasoning"
+          lines << ""
+          lines << bundle.llm_recommendation["reasoning"]
+          lines << ""
+          if bundle.resolution_source == "llm"
+            confidence = bundle.llm_recommendation["confidence"] || "unknown"
+            lines << "_Confidence: #{confidence}_"
+            lines << ""
+          end
+        end
+
         lines << "## Security Advisories Addressed"
         lines << ""
 
@@ -524,6 +539,13 @@ module Github
           else
             lines << "- #{cve} (#{advisory.source})"
           end
+        end
+
+        # Note for Gemfile.lock projects
+        if @project&.file_type == "gemfile_lock"
+          lines << ""
+          lines << "---"
+          lines << "_Note: This PR was generated using `bundle update #{bundle.gem_name} --conservative` to minimize transitive dependency changes._"
         end
 
         lines << ""
