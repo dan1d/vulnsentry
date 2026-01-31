@@ -17,7 +17,8 @@ module Github
     # @param repo [String] Repository in owner/repo format
     # @return [Array<BranchInfo>]
     def fetch_all(repo:)
-      result = @gh.json!(
+      # Use run! since --jq outputs plain text, not JSON
+      result = @gh.run!(
         "api",
         "repos/#{repo}/branches",
         "--paginate",

@@ -9,7 +9,7 @@ RSpec.describe Github::BranchesFetcher do
   describe "#fetch_all" do
     context "when branches exist" do
       before do
-        allow(gh_cli).to receive(:json!).with(
+        allow(gh_cli).to receive(:run!).with(
           "api",
           "repos/rails/rails/branches",
           "--paginate",
@@ -36,7 +36,7 @@ RSpec.describe Github::BranchesFetcher do
 
     context "when repository has no branches" do
       before do
-        allow(gh_cli).to receive(:json!).and_return("")
+        allow(gh_cli).to receive(:run!).and_return("")
       end
 
       it "returns an empty array" do
@@ -47,7 +47,7 @@ RSpec.describe Github::BranchesFetcher do
 
     context "when GitHub API call fails" do
       before do
-        allow(gh_cli).to receive(:json!).and_raise(
+        allow(gh_cli).to receive(:run!).and_raise(
           Github::GhCli::CommandError.new(
             "gh command failed",
             cmd: ["gh", "api"],
@@ -68,7 +68,7 @@ RSpec.describe Github::BranchesFetcher do
 
   describe "#fetch_matching" do
     before do
-      allow(gh_cli).to receive(:json!).and_return("main\n7-2-stable\n7-1-stable\nfeature-branch\nfix/bug\n")
+      allow(gh_cli).to receive(:run!).and_return("main\n7-2-stable\n7-1-stable\nfeature-branch\nfix/bug\n")
     end
 
     it "returns branches matching the given pattern" do
@@ -89,7 +89,7 @@ RSpec.describe Github::BranchesFetcher do
   describe "#fetch_rails_stable_branches" do
     context "with typical Rails branch setup" do
       before do
-        allow(gh_cli).to receive(:json!).and_return(
+        allow(gh_cli).to receive(:run!).and_return(
           "main\n7-2-stable\n7-1-stable\n7-0-stable\n6-1-stable\nfeature-branch\n"
         )
       end
@@ -116,7 +116,7 @@ RSpec.describe Github::BranchesFetcher do
 
     context "with master instead of main" do
       before do
-        allow(gh_cli).to receive(:json!).and_return(
+        allow(gh_cli).to receive(:run!).and_return(
           "master\n5-2-stable\n5-1-stable\n"
         )
       end
@@ -130,7 +130,7 @@ RSpec.describe Github::BranchesFetcher do
 
     context "with no main/master branch" do
       before do
-        allow(gh_cli).to receive(:json!).and_return(
+        allow(gh_cli).to receive(:run!).and_return(
           "7-2-stable\n7-1-stable\n"
         )
       end
@@ -144,7 +144,7 @@ RSpec.describe Github::BranchesFetcher do
 
     context "with no stable branches" do
       before do
-        allow(gh_cli).to receive(:json!).and_return(
+        allow(gh_cli).to receive(:run!).and_return(
           "main\nfeature-x\nbugfix-y\n"
         )
       end
@@ -160,7 +160,7 @@ RSpec.describe Github::BranchesFetcher do
   describe "version sorting" do
     before do
       # Out of order versions to verify sorting
-      allow(gh_cli).to receive(:json!).and_return(
+      allow(gh_cli).to receive(:run!).and_return(
         "6-1-stable\n7-0-stable\n7-2-stable\n5-2-stable\n7-1-stable\n"
       )
     end
