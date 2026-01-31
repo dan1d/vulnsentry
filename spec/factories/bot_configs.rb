@@ -9,8 +9,8 @@ FactoryBot.define do
     per_branch_daily_cap { 1 }
     per_gem_daily_cap { 1 }
     rejection_cooldown_hours { 24 }
-    fork_repo { "dan1d/ruby" }
-    upstream_repo { "ruby/ruby" }
-    fork_git_url { "git@github.com:dan1d/ruby.git" }
+    # Note: fork_repo, upstream_repo, and fork_git_url are now read-only
+    # and delegate to the default project. Create a project factory first
+    # if you need these values.
   end
 end

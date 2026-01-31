@@ -13,5 +13,15 @@ FactoryBot.define do
       candidate_bump { nil }
       patch_bundle
     end
+
+    trait :for_project do
+      transient do
+        target_project { nil }
+      end
+
+      candidate_bump { nil }
+      patch_bundle { association :patch_bundle, branch_target: association(:branch_target, project: target_project || association(:project)) }
+      project { target_project || patch_bundle.branch_target.project }
+    end
   end
 end
