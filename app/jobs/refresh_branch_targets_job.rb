@@ -45,7 +45,11 @@ class RefreshBranchTargetsJob < ApplicationJob
 
   def refresh_github_branches(project)
     fetcher = Github::BranchesFetcher.new
-    branches = fetcher.fetch_rails_stable_branches(repo: project.upstream_repo)
+    all_branches = fetcher.fetch_rails_stable_branches(repo: project.upstream_repo)
+
+    # Filter to only maintained branches (top 4 stable + main/master)
+    # This prevents tracking ancient EOL branches like 0-5-stable
+    branches = filter_maintained_branches(all_branches)
 
     upsert_github_branches(project, branches)
 
@@ -53,7 +57,12 @@ class RefreshBranchTargetsJob < ApplicationJob
       kind: "branch_refresh",
       status: "ok",
       message: "Updated branch targets for #{project.name} from GitHub",
-      payload: { project: project.slug, count: branches.count, branches: branches.map(&:name) },
+      payload: {
+        project: project.slug,
+        count: branches.count,
+        branches: branches.map(&:name),
+        filtered_out: all_branches.count - branches.count
+      },
       occurred_at: Time.current
     )
   rescue Github::BranchesFetcher::FetchError => e
@@ -65,6 +74,22 @@ class RefreshBranchTargetsJob < ApplicationJob
       occurred_at: Time.current
     )
     raise
+  end
+
+  # Filter to only maintain branches within the last N stable releases
+  # This prevents tracking ancient EOL branches
+  def filter_maintained_branches(branches)
+    main_branches = branches.select { |b| b.name == "main" || b.name == "master" }
+    stable_branches = branches
+                        .select { |b| b.name.match?(/^\d+-\d+-stable$/) }
+                        .sort_by { |b| version_to_array(b.name) }
+                        .reverse
+
+    # Keep main/master + top 4 stable branches
+    # For Rails 8: main, 8-0-stable, 7-2-stable, 7-1-stable, 7-0-stable
+    maintained_stable = stable_branches.first(4)
+
+    main_branches + maintained_stable
   end
 
   def upsert_github_branches(project, branches)
@@ -108,11 +133,18 @@ class RefreshBranchTargetsJob < ApplicationJob
 
     # Find position of this branch
     position = stable_branches.find_index { |b| b.name == branch_name }
-    return "normal" unless position
+    return "eol" unless position # Not in the filtered list = EOL
 
-    # Newest 2 stable branches are "normal", rest are "security"
-    # Example: 7-2-stable, 7-1-stable = normal; 7-0-stable, 6-1-stable = security
-    position < 2 ? "normal" : "security"
+    # Newest 2 stable branches are "normal", next 2 are "security", rest are "eol"
+    # Example for Rails 8: main=normal, 8-0-stable=normal, 7-2-stable=normal,
+    #                      7-1-stable=security, 7-0-stable=security, older=eol
+    if position < 2
+      "normal"
+    elsif position < 4
+      "security"
+    else
+      "eol"
+    end
   end
 
   def version_to_array(branch_name)

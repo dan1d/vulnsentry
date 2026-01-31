@@ -36,17 +36,24 @@ class SyncNewAdvisoriesJob < ApplicationJob
   private
 
   def active_branches
-    BranchTarget.where(enabled: true).where.not(maintenance_status: "eol").order(name: :asc)
+    # Only process branches from projects that use bundled_gems file type
+    # Rails and other Gemfile.lock projects need different evaluation logic
+    BranchTarget
+      .joins(:project)
+      .where(enabled: true)
+      .where.not(maintenance_status: "eol")
+      .where(projects: { file_type: "bundled_gems" })
+      .order(name: :asc)
   end
 
   def sync_branch(branch_target, force_refresh:)
-    fetcher = RubyCore::BundledGemsFetcher.new
-    upstream_repo = BotConfig.instance.upstream_repo
+    project = branch_target.project
+    fetcher = project.file_fetcher
 
     begin
-      content = fetcher.fetch(repo: upstream_repo, branch: branch_target.name)
-      file = RubyCore::BundledGemsFile.new(content)
-    rescue RubyCore::BundledGemsFetcher::FetchError => e
+      content = fetcher.fetch(branch: branch_target.name)
+      file = project.parse_file(content)
+    rescue ProjectFiles::Fetcher::FetchError => e
       log_fetch_error(branch_target, e)
       return { gems_checked: 0, new_advisories: 0 }
     end
