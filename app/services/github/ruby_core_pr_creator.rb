@@ -352,17 +352,18 @@ module Github
       end
 
       # For Gemfile.lock projects: run bundle update to properly update the lockfile
+      # Uses Docker to ensure correct Ruby version is used
       def apply_gemfile_lock_bump!(repo_dir, bundle)
         gem_name = bundle.gem_name
         target_version = bundle.target_version
 
-        within_repo(repo_dir) do
-          # First, add all platforms to ensure CI works
-          run_bundle!("lock", "--add-platform", "x86_64-linux", "aarch64-linux", "arm64-darwin", "x86_64-darwin")
+        # Detect required Ruby version from .ruby-version file
+        ruby_version = detect_ruby_version(repo_dir)
 
-          # Update the specific gem to the target version
-          # Use conservative update to minimize transitive dependency changes
-          run_bundle!("update", gem_name, "--conservative")
+        within_repo(repo_dir) do
+          # Run bundle commands in Docker with the correct Ruby version
+          run_bundle_in_docker!(ruby_version, "lock", "--add-platform", "x86_64-linux", "aarch64-linux", "arm64-darwin", "x86_64-darwin")
+          run_bundle_in_docker!(ruby_version, "update", gem_name, "--conservative")
 
           # Verify the gem was updated to the expected version
           lockfile_content = File.read("Gemfile.lock")
@@ -373,7 +374,7 @@ module Github
             raise Error, "gem #{gem_name} not found in Gemfile.lock after bundle update"
           end
 
-          actual_version = entry.version
+          actual_version = GemVersionNormalizer.normalize(entry.version)
           unless Gem::Version.new(actual_version) >= Gem::Version.new(target_version)
             raise Error, "bundle update did not reach target version: got #{actual_version}, expected >= #{target_version}"
           end
@@ -384,6 +385,45 @@ module Github
             raise Error, "Gemfile.lock was not modified by bundle update"
           end
         end
+      end
+
+      def detect_ruby_version(repo_dir)
+        ruby_version_file = File.join(repo_dir, ".ruby-version")
+        if File.exist?(ruby_version_file)
+          version = File.read(ruby_version_file).strip
+          # Handle formats like "ruby-3.2.0" or just "3.2.0"
+          version = version.sub(/^ruby-/, "")
+          # Get major.minor (e.g., "3.2" from "3.2.0")
+          version.split(".")[0, 2].join(".")
+        else
+          # Default to a recent stable Ruby
+          "3.2"
+        end
+      end
+
+      def run_bundle_in_docker!(ruby_version, *bundle_args)
+        # Use official Ruby Docker image
+        image = "ruby:#{ruby_version}"
+
+        # Get current working directory (should be repo_dir)
+        repo_path = Dir.pwd
+
+        # Build Docker command
+        # Mount the repo, run bundle command, write back to mounted volume
+        docker_cmd = [
+          "docker", "run", "--rm",
+          "-v", "#{repo_path}:/app",
+          "-w", "/app",
+          "-e", "BUNDLE_FROZEN=false",
+          image,
+          "bundle", *bundle_args
+        ]
+
+        stdout, stderr, status = Open3.capture3(*docker_cmd)
+        unless status.success?
+          raise Error, "docker bundle failed (ruby:#{ruby_version}): #{stderr.strip}"
+        end
+        stdout
       end
 
       # For bundled_gems files: use text replacement
@@ -408,12 +448,6 @@ module Github
         end
       end
 
-      def run_bundle!(*args)
-        cmd = [ "bundle", *args ]
-        stdout, stderr, status = Open3.capture3(*cmd)
-        return stdout if status.success?
-        raise Error, "bundle failed: #{cmd.join(' ')}: #{stderr.strip}"
-      end
 
       def bump_for_project(old_content, bundle)
         case @project&.file_type
