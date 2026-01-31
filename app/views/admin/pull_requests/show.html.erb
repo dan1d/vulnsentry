@@ -1,10 +1,18 @@
 <%= render "admin/shared/nav" %>
 
+<%
+  # Support both legacy candidate_bump and new patch_bundle
+  parent = @pull_request.patch_bundle || @pull_request.candidate_bump
+  base_branch = parent&.base_branch || @pull_request.head_branch || "?"
+  gem_name = parent&.gem_name || "?"
+  target_version = parent&.target_version || "?"
+%>
+
 <section class="section">
   <div class="container is-max-desktop">
     <%= render "shared/page_header",
       title: "PR ##{@pull_request.pr_number || '?'}".html_safe,
-      subtitle: "#{@pull_request.candidate_bump.base_branch}: #{@pull_request.candidate_bump.gem_name} → #{@pull_request.candidate_bump.target_version}",
+      subtitle: "#{base_branch}: #{gem_name} → #{target_version}",
       back_path: admin_pull_requests_path %>
 
     <%# Status and Review State %>
@@ -42,51 +50,67 @@
     </div>
 
     <%# Advisory Information %>
-    <% advisory = @pull_request.candidate_bump.advisory %>
-    <%= render "shared/box_section", title: "Advisory" do %>
-      <div class="content is-small">
-        <table class="table is-narrow is-fullwidth">
-          <tbody>
-            <tr>
-              <td class="has-text-grey" style="width: 100px;">Record</td>
-              <td>
-                <%= link_to admin_advisory_path(advisory), class: "has-text-link" do %>
-                  <span class="icon-text">
-                    <span>Advisory #<%= advisory.id %></span>
-                    <span class="icon is-small"><i class="fas fa-arrow-right"></i></span>
-                  </span>
+    <%
+      # Get advisories from patch_bundle (new) or candidate_bump (legacy)
+      if @pull_request.patch_bundle.present?
+        advisories = @pull_request.patch_bundle.bundled_advisories.includes(:advisory).map(&:advisory)
+      elsif @pull_request.candidate_bump.present?
+        advisories = [@pull_request.candidate_bump.advisory].compact
+      else
+        advisories = []
+      end
+    %>
+    <% if advisories.any? %>
+      <%= render "shared/box_section", title: "Advisories (#{advisories.size})" do %>
+        <div class="content is-small">
+          <% advisories.each do |advisory| %>
+            <table class="table is-narrow is-fullwidth mb-4">
+              <tbody>
+                <tr>
+                  <td class="has-text-grey" style="width: 100px;">Record</td>
+                  <td>
+                    <%= link_to admin_advisory_path(advisory), class: "has-text-link" do %>
+                      <span class="icon-text">
+                        <span>Advisory #<%= advisory.id %></span>
+                      </span>
+                    <% end %>
+                  </td>
+                </tr>
+                <% if advisory.cve.present? %>
+                  <tr>
+                    <td class="has-text-grey">CVE</td>
+                    <td class="is-family-monospace">
+                      <%= link_to advisory.cve, "https://nvd.nist.gov/vuln/detail/#{advisory.cve}", target: "_blank", rel: "noopener", class: "has-text-link" %>
+                    </td>
+                  </tr>
                 <% end %>
-              </td>
-            </tr>
-            <% if advisory.cve.present? %>
-              <tr>
-                <td class="has-text-grey">CVE</td>
-                <td class="is-family-monospace">
-                  <%= link_to advisory.cve, "https://nvd.nist.gov/vuln/detail/#{advisory.cve}", target: "_blank", rel: "noopener", class: "has-text-link" %>
-                </td>
-              </tr>
-            <% end %>
-            <% if advisory.advisory_url.present? %>
-              <tr>
-                <td class="has-text-grey">External</td>
-                <td>
-                  <%= link_to advisory.advisory_url, advisory.advisory_url, target: "_blank", rel: "noopener", class: "has-text-link is-family-monospace", style: "word-break: break-all;" %>
-                </td>
-              </tr>
-            <% end %>
-            <tr>
-              <td class="has-text-grey">Source</td>
-              <td class="is-family-monospace"><%= advisory.fingerprint %></td>
-            </tr>
-            <% if advisory.severity.present? %>
-              <tr>
-                <td class="has-text-grey">Severity</td>
-                <td><span class="tag <%= severity_class(advisory.severity) %>"><%= advisory.severity %></span></td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      </div>
+                <% if advisory.advisory_url.present? %>
+                  <tr>
+                    <td class="has-text-grey">External</td>
+                    <td>
+                      <%= link_to advisory.advisory_url, advisory.advisory_url, target: "_blank", rel: "noopener", class: "has-text-link is-family-monospace", style: "word-break: break-all;" %>
+                    </td>
+                  </tr>
+                <% end %>
+                <tr>
+                  <td class="has-text-grey">Source</td>
+                  <td class="is-family-monospace"><%= advisory.fingerprint %></td>
+                </tr>
+                <% if advisory.severity.present? %>
+                  <tr>
+                    <td class="has-text-grey">Severity</td>
+                    <td><span class="tag <%= severity_class(advisory.severity) %>"><%= advisory.severity %></span></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          <% end %>
+        </div>
+      <% end %>
+    <% else %>
+      <%= render "shared/box_section", title: "Advisory" do %>
+        <p class="has-text-grey">No advisories linked</p>
+      <% end %>
     <% end %>
 
     <%# GitHub Link %>

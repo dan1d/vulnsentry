@@ -25,10 +25,17 @@
         </thead>
         <tbody>
           <% @pull_requests.each do |pr| %>
+            <%
+              # Support both legacy candidate_bump and new patch_bundle
+              parent = pr.patch_bundle || pr.candidate_bump
+              base_branch = parent&.base_branch || pr.head_branch || "?"
+              gem_name = parent&.gem_name || "?"
+              target_version = parent&.target_version || "?"
+            %>
             <tr>
               <td class="is-family-monospace"><%= pr.pr_number || "?" %></td>
-              <td class="is-family-monospace"><%= pr.candidate_bump.base_branch %></td>
-              <td><%= pr.candidate_bump.gem_name %> <span class="is-family-monospace">→ <%= pr.candidate_bump.target_version %></span></td>
+              <td class="is-family-monospace"><%= base_branch %></td>
+              <td><%= gem_name %> <span class="is-family-monospace">→ <%= target_version %></span></td>
               <td><%= render "shared/status_tag", status: pr.status, size: "small" %></td>
               <td class="has-text-right">
                 <%= link_to "View", admin_pull_request_path(pr), class: "button is-small is-link is-light" %>
