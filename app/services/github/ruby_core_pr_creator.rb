@@ -44,6 +44,12 @@ module Github
       raise Error, "bundle has no associated project" unless @project
       raise Error, "project cannot create PRs (no fork configured)" unless @project.can_create_prs?
 
+      # Check for existing PRs that might already fix this vulnerability
+      existing_fix = check_for_existing_fix_pr(bundle)
+      if existing_fix
+        raise Error, "existing PR may already fix this: #{existing_fix[:url]} - #{existing_fix[:title]}"
+      end
+
       base_branch = bundle.base_branch
       branch_name = branch_name_for_bundle(bundle)
 
@@ -246,6 +252,57 @@ module Github
         nil
       end
 
+      # Check for existing open PRs that might already fix the same vulnerability
+      def check_for_existing_fix_pr(bundle)
+        upstream = @project.upstream_repo
+        gem_name = bundle.gem_name
+        target_version = bundle.target_version
+        base_branch = bundle.base_branch
+
+        # Search for open PRs that mention the gem name and target version
+        search_terms = [
+          "bump #{gem_name}",
+          "update #{gem_name}",
+          "#{gem_name} #{target_version}",
+          gem_name
+        ]
+
+        search_terms.each do |term|
+          prs = search_prs(upstream, term, base_branch)
+          next if prs.empty?
+
+          # Check if any PR title/body suggests it fixes the same issue
+          prs.each do |pr|
+            title = pr["title"].to_s.downcase
+            # Match if title contains gem name and either "bump", "update", or the version
+            if title.include?(gem_name.downcase)
+              if title.include?("bump") || title.include?("update") || title.include?(target_version)
+                return { url: pr["url"], title: pr["title"], number: pr["number"] }
+              end
+            end
+          end
+        end
+
+        nil
+      rescue Github::GhCli::CommandError
+        # If search fails, don't block PR creation
+        nil
+      end
+
+      def search_prs(upstream, query, base_branch)
+        @gh.json!(
+          "pr", "list",
+          "--repo", upstream,
+          "--base", base_branch,
+          "--state", "open",
+          "--search", query,
+          "--json", "number,url,title,state",
+          "--limit", "5"
+        )
+      rescue Github::GhCli::CommandError
+        []
+      end
+
       def pr_title_for(candidate)
         target = branch_display_name(candidate.base_branch)
         "Bump #{candidate.gem_name} to #{candidate.target_version} for #{target}"
@@ -400,7 +457,8 @@ module Github
       end
 
       def upstream_https_url
-        "https://github.com/#{@config.upstream_repo}.git"
+        # Use SSH for cloning (requires SSH key configured)
+        "git@github.com:#{@config.upstream_repo}.git"
       end
 
       def fork_git_url
@@ -413,7 +471,8 @@ module Github
 
       # Project-aware URL helpers
       def project_upstream_https_url
-        "https://github.com/#{@project.upstream_repo}.git"
+        # Use SSH for cloning (requires SSH key configured)
+        "git@github.com:#{@project.upstream_repo}.git"
       end
 
       def project_fork_git_url
