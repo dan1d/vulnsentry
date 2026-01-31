@@ -67,7 +67,8 @@ RSpec.describe SyncNewAdvisoriesJob, type: :job do
 
     event = SystemEvent.find_by!(kind: "sync_new_advisories")
     expect(event.status).to eq("ok")
-    expect(event.payload["new_advisories"]).to eq(1)
+    expect(event.payload["total_new_advisories"]).to eq(1)
+    expect(event.payload["by_project"]).to be_present
   end
 
   it "skips gems that have been recently checked" do
@@ -90,7 +91,7 @@ RSpec.describe SyncNewAdvisoriesJob, type: :job do
     described_class.perform_now
 
     event = SystemEvent.find_by!(kind: "sync_new_advisories")
-    expect(event.payload["gems_checked"]).to eq(0)
+    expect(event.payload["total_gems_checked"]).to eq(0)
   end
 
   it "handles fetch errors gracefully" do

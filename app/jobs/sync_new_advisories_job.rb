@@ -17,19 +17,27 @@ class SyncNewAdvisoriesJob < ApplicationJob
 
   def perform(force_refresh: false)
     branches = active_branches
-    gems_checked = 0
-    new_advisories = 0
+    branch_details = []
+    total_gems_checked = 0
+    total_new_advisories = 0
 
     branches.find_each do |branch_target|
       result = sync_branch(branch_target, force_refresh: force_refresh)
-      gems_checked += result[:gems_checked]
-      new_advisories += result[:new_advisories]
+      total_gems_checked += result[:gems_checked]
+      total_new_advisories += result[:new_advisories]
+
+      branch_details << {
+        project: branch_target.project.slug,
+        branch: branch_target.name,
+        gems_checked: result[:gems_checked],
+        new_advisories: result[:new_advisories]
+      }
     end
 
     log_completion(
-      branches_count: branches.count,
-      gems_checked: gems_checked,
-      new_advisories: new_advisories
+      branches: branch_details,
+      gems_checked: total_gems_checked,
+      new_advisories: total_new_advisories
     )
   end
 
@@ -147,22 +155,37 @@ class SyncNewAdvisoriesJob < ApplicationJob
       status: "failed",
       message: error.message,
       payload: {
+        project: branch_target.project.slug,
         branch: branch_target.name,
+        file_type: branch_target.project.file_type,
         job: self.class.name
       },
       occurred_at: Time.current
     )
   end
 
-  def log_completion(branches_count:, gems_checked:, new_advisories:)
+  def log_completion(branches:, gems_checked:, new_advisories:)
+    # Group by project for summary
+    by_project = branches.group_by { |b| b[:project] }
+    project_summaries = by_project.transform_values do |project_branches|
+      {
+        branches: project_branches.map { |b| b[:branch] },
+        gems_checked: project_branches.sum { |b| b[:gems_checked] },
+        new_advisories: project_branches.sum { |b| b[:new_advisories] }
+      }
+    end
+
     SystemEvent.create!(
       kind: "sync_new_advisories",
       status: "ok",
-      message: "Synced #{branches_count} branches, checked #{gems_checked} gems, found #{new_advisories} new advisories",
+      message: "Synced #{branches.count} branches across #{by_project.keys.count} projects, checked #{gems_checked} gems, found #{new_advisories} new advisories",
       payload: {
-        branches_count: branches_count,
-        gems_checked: gems_checked,
-        new_advisories: new_advisories
+        total_branches: branches.count,
+        total_projects: by_project.keys.count,
+        total_gems_checked: gems_checked,
+        total_new_advisories: new_advisories,
+        by_project: project_summaries,
+        branch_details: branches
       },
       occurred_at: Time.current
     )
