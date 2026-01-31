@@ -45,7 +45,7 @@
                 <%= link_to project.upstream_repo, "https://github.com/#{project.upstream_repo}", target: "_blank", class: "is-family-monospace" %>
               </td>
               <td>
-                <span class="tag is-light"><%= project.file_type.humanize %></span>
+                <%= render "shared/project_type_tag", project: project %>
               </td>
               <td>
                 <%= project.branch_targets.count %>

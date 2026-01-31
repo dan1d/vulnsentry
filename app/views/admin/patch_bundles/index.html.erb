@@ -7,6 +7,12 @@
       subtitle: "Security patches grouped by branch and gem. Review and approve before creating PRs." %>
 
     <%= render layout: "shared/filter_form", locals: { url: admin_patch_bundles_path, clear_path: admin_patch_bundles_path } do %>
+      <%= render "shared/filter_field",
+          label: "Project",
+          name: :project_slug,
+          value: params[:project_slug],
+          type: :select,
+          options: Project.enabled.pluck(:name, :slug) %>
       <%= render "shared/filter_field", label: "State", name: :state, value: params[:state], type: :select, options: PatchBundle::STATES %>
       <%= render "shared/filter_field", label: "Branch", name: :base_branch, value: params[:base_branch], monospace: true %>
       <%= render "shared/filter_field", label: "Gem", name: :gem_name, value: params[:gem_name] %>
@@ -16,6 +22,7 @@
       <table class="table is-fullwidth is-hoverable">
         <thead>
           <tr>
+            <th>Project</th>
             <th>Branch</th>
             <th>Gem</th>
             <th>Bump</th>
@@ -28,6 +35,14 @@
         <tbody>
           <% @patch_bundles.each do |pb| %>
             <tr>
+              <td>
+                <% project = pb.branch_target&.project %>
+                <% if project %>
+                  <%= render "shared/project_type_tag", project: project, size: "small" %>
+                <% else %>
+                  <span class="has-text-grey">—</span>
+                <% end %>
+              </td>
               <td class="is-family-monospace"><%= pb.base_branch %></td>
               <td><%= pb.gem_name %></td>
               <td class="is-family-monospace">

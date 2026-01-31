@@ -1,0 +1,13 @@
+<%# Project type tag with visual indicator
+    Local variables:
+    - project: (required) The project object
+    - size: (optional) Tag size ("small", nil for normal)
+%>
+<%
+  tag_class = project.file_type == "bundled_gems" ? "is-bundled-gems" : "is-gemfile-lock"
+  size_class = local_assigns[:size] == "small" ? "is-small" : ""
+  label = project.file_type == "bundled_gems" ? "bundled_gems" : "Gemfile.lock"
+%>
+<span class="tag file-type-indicator <%= tag_class %> <%= size_class %>" title="<%= project.file_path %>">
+  <span><%= label %></span>
+</span>

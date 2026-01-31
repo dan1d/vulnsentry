@@ -140,8 +140,9 @@ module Evaluation
       # We have a target version - try to generate the diff
       target = resolution[:target]
       begin
-        bumper = RubyCore::BundledGemsBumper.bump!(
-          old_content: bundled_gems_content,
+        bumper = bump_version_for_project(
+          project: branch_target.project,
+          content: bundled_gems_content,
           gem_name: entry.name,
           target_version: target
         )
@@ -172,12 +173,33 @@ module Evaluation
         if resolution[:excluded_advisories].present?
           mark_excluded_advisories(bundle, resolution[:excluded_advisories], resolution[:exclusion_reason])
         end
-      rescue RubyCore::BundledGemsFile::ParseError, RubyCore::DiffValidator::ValidationError => e
+      rescue RubyCore::BundledGemsFile::ParseError,
+             RubyCore::DiffValidator::ValidationError,
+             ProjectFiles::GemfileLockFile::ParseError,
+             ProjectFiles::GemfileLockBumper::BumpError => e
         bundle.update!(
           state: "awaiting_fix",
           target_version: target,
           blocked_reason: "bump_generation_failed: #{e.message}",
           last_evaluated_at: Time.current
+        )
+      end
+    end
+
+    def bump_version_for_project(project:, content:, gem_name:, target_version:)
+      case project&.file_type
+      when "gemfile_lock"
+        ProjectFiles::GemfileLockBumper.bump!(
+          old_content: content,
+          gem_name: gem_name,
+          target_version: target_version
+        )
+      else
+        # Default to bundled_gems format (for Ruby Core and legacy)
+        RubyCore::BundledGemsBumper.bump!(
+          old_content: content,
+          gem_name: gem_name,
+          target_version: target_version
         )
       end
     end
@@ -288,8 +310,15 @@ module Evaluation
     end
 
     def fetch_bundled_gems_content(branch_target)
-      fetcher = RubyCore::BundledGemsFetcher.new
-      fetcher.fetch(repo: BotConfig.instance.upstream_repo, branch: branch_target.name)
+      project = branch_target.project
+      if project
+        fetcher = project.file_fetcher
+        fetcher.fetch(branch: branch_target.name)
+      else
+        # Legacy fallback for branches without project association
+        fetcher = RubyCore::BundledGemsFetcher.new
+        fetcher.fetch(repo: BotConfig.instance.upstream_repo, branch: branch_target.name)
+      end
     end
 
     def build_entry(gem_name, version)

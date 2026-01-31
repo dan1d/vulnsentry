@@ -43,15 +43,18 @@ class SyncNewAdvisoriesJob < ApplicationJob
 
   private
 
+  # Batch size for processing large gem lists (Gemfile.lock projects)
+  BATCH_SIZE = 25
+  BATCH_DELAY_SECONDS = 0.5
+
   def active_branches
-    # Only process branches from projects that use bundled_gems file type
-    # Rails and other Gemfile.lock projects need different evaluation logic
+    # Process all enabled project types (bundled_gems and gemfile_lock)
     BranchTarget
       .joins(:project)
       .where(enabled: true)
       .where.not(maintenance_status: "eol")
-      .where(projects: { file_type: "bundled_gems" })
-      .order(name: :asc)
+      .where(projects: { enabled: true })
+      .order("projects.slug ASC", "branch_targets.name ASC")
   end
 
   def sync_branch(branch_target, force_refresh:)
@@ -68,9 +71,40 @@ class SyncNewAdvisoriesJob < ApplicationJob
 
     gems_to_check = select_gems_needing_check(file.entries, branch_target)
 
+    # Use batch processing for large gem counts (Gemfile.lock projects)
+    if gems_to_check.size > BATCH_SIZE
+      evaluate_in_batches(branch_target, gems_to_check, content, force_refresh)
+    else
+      evaluate_sequentially(branch_target, gems_to_check, content, force_refresh)
+    end
+  end
+
+  def evaluate_in_batches(branch_target, gems, content, force_refresh)
     result = { gems_checked: 0, new_advisories: 0 }
 
-    gems_to_check.each do |entry|
+    gems.each_slice(BATCH_SIZE).with_index do |batch, idx|
+      batch.each do |entry|
+        check_result = check_gem_for_new_advisories(
+          branch_target: branch_target,
+          entry: entry,
+          bundled_gems_content: content,
+          force_refresh: force_refresh
+        )
+        result[:gems_checked] += 1
+        result[:new_advisories] += check_result[:new_count]
+      end
+
+      # Small delay between batches to avoid rate limiting
+      sleep(BATCH_DELAY_SECONDS) if idx > 0 && idx < (gems.size / BATCH_SIZE)
+    end
+
+    result
+  end
+
+  def evaluate_sequentially(branch_target, gems, content, force_refresh)
+    result = { gems_checked: 0, new_advisories: 0 }
+
+    gems.each do |entry|
       check_result = check_gem_for_new_advisories(
         branch_target: branch_target,
         entry: entry,

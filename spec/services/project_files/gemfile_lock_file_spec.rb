@@ -5,35 +5,35 @@ require "rails_helper"
 RSpec.describe ProjectFiles::GemfileLockFile do
   let(:sample_lockfile) do
     <<~LOCKFILE
-      GEM
-        remote: https://rubygems.org/
-        specs:
-          actioncable (7.1.3)
-            actionpack (= 7.1.3)
-            activesupport (= 7.1.3)
-            nio4r (~> 2.0)
-            websocket-driver (>= 0.6.1)
-          actionpack (7.1.3)
-            actionview (= 7.1.3)
-            activesupport (= 7.1.3)
-            rack (~> 2.2, >= 2.2.4)
-          nokogiri (1.16.0)
-            mini_portile2 (~> 2.8.2)
-            racc (~> 1.4)
-          rack (2.2.8)
-          rexml (3.4.4)
+GEM
+  remote: https://rubygems.org/
+  specs:
+    actioncable (7.1.3)
+      actionpack (= 7.1.3)
+      activesupport (= 7.1.3)
+      nio4r (~> 2.0)
+      websocket-driver (>= 0.6.1)
+    actionpack (7.1.3)
+      actionview (= 7.1.3)
+      activesupport (= 7.1.3)
+      rack (~> 2.2, >= 2.2.4)
+    nokogiri (1.16.0)
+      mini_portile2 (~> 2.8.2)
+      racc (~> 1.4)
+    rack (2.2.8)
+    rexml (3.4.4)
 
-      PLATFORMS
-        ruby
-        x86_64-linux
+PLATFORMS
+  ruby
+  x86_64-linux
 
-      DEPENDENCIES
-        actioncable
-        nokogiri
-        rexml
+DEPENDENCIES
+  actioncable
+  nokogiri
+  rexml
 
-      BUNDLED WITH
-        2.5.3
+BUNDLED WITH
+  2.5.3
     LOCKFILE
   end
 

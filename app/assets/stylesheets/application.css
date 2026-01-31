@@ -951,3 +951,74 @@ turbo-frame[busy]::after {
   60% { transform: rotate(10deg); }
   80% { transform: rotate(-10deg); }
 }
+
+/* ========================================
+   Project Type Indicators
+   ======================================== */
+
+/* Project type tags with distinct visual identity */
+.tag.is-bundled-gems {
+  background-color: rgba(204, 52, 45, 0.2);
+  color: var(--ruby-red);
+  border: 1px solid var(--ruby-red);
+}
+
+.tag.is-gemfile-lock {
+  background-color: rgba(62, 142, 208, 0.2);
+  color: #3e8ed0;
+  border: 1px solid #3e8ed0;
+}
+
+/* File type indicator with icon */
+.file-type-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.file-type-indicator .icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* Gem count badge - shows scale of dependencies */
+.gem-count-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.gem-count-badge.is-small {
+  background-color: rgba(72, 199, 116, 0.15);
+  color: var(--success);
+}
+
+.gem-count-badge.is-medium {
+  background-color: rgba(255, 193, 7, 0.15);
+  color: var(--warning);
+}
+
+.gem-count-badge.is-large {
+  background-color: rgba(241, 70, 104, 0.15);
+  color: var(--danger);
+}
+
+/* Project type summary cards */
+.project-type-card {
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-tertiary);
+}
+
+.project-type-card.is-ruby {
+  border-left: 3px solid var(--ruby-red);
+}
+
+.project-type-card.is-rails {
+  border-left: 3px solid #3e8ed0;
+}

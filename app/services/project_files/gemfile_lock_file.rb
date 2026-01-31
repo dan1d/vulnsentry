@@ -28,7 +28,7 @@ module ProjectFiles
       end
     end
 
-    SPECS_SECTION_REGEX = /^\s{4}specs:$/
+    SPECS_SECTION_REGEX = /^\s{2}specs:$/
     GEM_LINE_REGEX = /^\s{4}(\S+)\s+\(([^)]+)\)$/
     PLATFORM_SECTION_REGEX = /^PLATFORMS$/
     GEM_SECTION_REGEX = /^GEM$/

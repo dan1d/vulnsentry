@@ -43,9 +43,12 @@ class Admin::PatchBundlesController < Admin::BaseController
   private
 
   def build_query
-    scope = PatchBundle.includes(:pull_request, :bundled_advisories)
+    scope = PatchBundle.includes(:pull_request, :bundled_advisories, branch_target: :project)
                        .order(updated_at: :desc)
 
+    if params[:project_slug].present?
+      scope = scope.joins(branch_target: :project).where(projects: { slug: params[:project_slug] })
+    end
     scope = scope.where(state: params[:state]) if params[:state].present?
     scope = scope.where(base_branch: params[:base_branch]) if params[:base_branch].present?
     scope = scope.where(gem_name: params[:gem_name]) if params[:gem_name].present?
