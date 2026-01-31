@@ -352,18 +352,14 @@ module Github
       end
 
       # For Gemfile.lock projects: run bundle update to properly update the lockfile
-      # Uses Docker to ensure correct Ruby version is used
       def apply_gemfile_lock_bump!(repo_dir, bundle)
         gem_name = bundle.gem_name
         target_version = bundle.target_version
 
-        # Detect required Ruby version from .ruby-version file
-        ruby_version = detect_ruby_version(repo_dir)
-
         within_repo(repo_dir) do
-          # Run bundle commands in Docker with the correct Ruby version
-          run_bundle_in_docker!(ruby_version, "lock", "--add-platform", "x86_64-linux", "aarch64-linux", "arm64-darwin", "x86_64-darwin")
-          run_bundle_in_docker!(ruby_version, "update", gem_name, "--conservative")
+          # Run bundle commands (try Docker first, fall back to local)
+          run_bundle_command!("lock", "--add-platform", "x86_64-linux", "aarch64-linux", "arm64-darwin", "x86_64-darwin", repo_dir: repo_dir)
+          run_bundle_command!("update", gem_name, "--conservative", repo_dir: repo_dir)
 
           # Verify the gem was updated to the expected version
           lockfile_content = File.read("Gemfile.lock")
@@ -387,6 +383,24 @@ module Github
         end
       end
 
+      def run_bundle_command!(*bundle_args, repo_dir:)
+        # Try Docker first if available, otherwise use local bundle
+        if docker_available?
+          ruby_version = detect_ruby_version(repo_dir)
+          run_bundle_in_docker!(ruby_version, *bundle_args)
+        else
+          run_bundle_local!(*bundle_args)
+        end
+      end
+
+      def docker_available?
+        return @docker_available if defined?(@docker_available)
+        _, _, status = Open3.capture3("docker", "version")
+        @docker_available = status.success?
+      rescue Errno::ENOENT
+        @docker_available = false
+      end
+
       def detect_ruby_version(repo_dir)
         ruby_version_file = File.join(repo_dir, ".ruby-version")
         if File.exist?(ruby_version_file)
@@ -402,14 +416,9 @@ module Github
       end
 
       def run_bundle_in_docker!(ruby_version, *bundle_args)
-        # Use official Ruby Docker image
         image = "ruby:#{ruby_version}"
-
-        # Get current working directory (should be repo_dir)
         repo_path = Dir.pwd
 
-        # Build Docker command
-        # Mount the repo, run bundle command, write back to mounted volume
         docker_cmd = [
           "docker", "run", "--rm",
           "-v", "#{repo_path}:/app",
@@ -422,6 +431,19 @@ module Github
         stdout, stderr, status = Open3.capture3(*docker_cmd)
         unless status.success?
           raise Error, "docker bundle failed (ruby:#{ruby_version}): #{stderr.strip}"
+        end
+        stdout
+      end
+
+      def run_bundle_local!(*bundle_args)
+        # Use the container's Ruby - may not match project's required version
+        # but works for most security bumps
+        env = { "BUNDLE_FROZEN" => "false" }
+        cmd = [ "bundle", *bundle_args ]
+
+        stdout, stderr, status = Open3.capture3(env, *cmd)
+        unless status.success?
+          raise Error, "bundle failed: #{cmd.join(' ')}: #{stderr.strip}"
         end
         stdout
       end
