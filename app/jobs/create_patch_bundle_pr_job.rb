@@ -21,10 +21,12 @@ class CreatePatchBundlePrJob < ApplicationJob
       result = creator.create_for_patch_bundle!(bundle, draft: draft)
 
       PullRequest.transaction do
+        # Use project's repos for multi-project support
+        project = bundle.branch_target&.project
         attrs = {
           patch_bundle: bundle,
-          upstream_repo: config.upstream_repo,
-          fork_repo: config.fork_repo,
+          upstream_repo: project&.upstream_repo || config.upstream_repo,
+          fork_repo: project&.fork_repo || config.fork_repo,
           head_branch: result[:head_branch],
           pr_number: result.fetch(:number),
           pr_url: result.fetch(:url),

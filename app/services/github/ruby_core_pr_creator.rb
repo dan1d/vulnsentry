@@ -39,19 +39,24 @@ module Github
       raise Error, "bundle already has PR" if bundle.pull_request.present?
       raise Error, "bundle has no target version" unless bundle.has_fix?
 
+      # Get project from bundle for multi-project support
+      @project = bundle.branch_target&.project
+      raise Error, "bundle has no associated project" unless @project
+      raise Error, "project cannot create PRs (no fork configured)" unless @project.can_create_prs?
+
       base_branch = bundle.base_branch
       branch_name = branch_name_for_bundle(bundle)
 
-      Dir.mktmpdir("ruby-core-pr-") do |dir|
+      Dir.mktmpdir("project-pr-") do |dir|
         repo_dir = File.join(dir, "repo")
-        clone_upstream!(dir, repo_dir, base_branch)
+        clone_upstream_for_project!(dir, repo_dir, base_branch)
         configure_git_identity!(repo_dir)
         create_branch!(repo_dir, branch_name)
 
         apply_bundle_bump!(repo_dir, bundle)
-        commit!(repo_dir, commit_message_for_bundle(bundle))
-        branch_name = ensure_unique_head_branch!(repo_dir, branch_name)
-        push_to_fork!(repo_dir, branch_name)
+        commit_for_bundle!(repo_dir, bundle)
+        branch_name = ensure_unique_head_branch_for_project!(repo_dir, branch_name)
+        push_to_fork_for_project!(repo_dir, branch_name)
 
         pr = ensure_pr_for_bundle!(branch_name, base_branch, bundle, draft: draft)
         { number: pr.fetch("number"), url: pr.fetch("url"), head_branch: branch_name }
@@ -71,6 +76,21 @@ module Github
           dir: work_dir
         )
         within_repo(repo_dir) { run_git!("remote", "add", "fork", fork_git_url) }
+      end
+
+      # Project-aware clone using project's upstream_repo
+      def clone_upstream_for_project!(work_dir, repo_dir, base_branch)
+        run_git!(
+          "clone",
+          "--depth",
+          "1",
+          "--branch",
+          base_branch,
+          project_upstream_https_url,
+          repo_dir,
+          dir: work_dir
+        )
+        within_repo(repo_dir) { run_git!("remote", "add", "fork", project_fork_git_url) }
       end
 
       def configure_git_identity!(repo_dir)
@@ -127,6 +147,16 @@ module Github
         end
       end
 
+      # Project-aware commit using project's file_path
+      def commit_for_bundle!(repo_dir, bundle)
+        file_path = @project&.file_path || "gems/bundled_gems"
+        message = commit_message_for_bundle(bundle)
+        within_repo(repo_dir) do
+          run_git!("add", file_path)
+          run_git!("commit", "-m", message)
+        end
+      end
+
       def ensure_unique_head_branch!(repo_dir, branch_name)
         return branch_name unless remote_branch_exists?(repo_dir, branch_name)
 
@@ -149,6 +179,30 @@ module Github
         raise Error, "unable to find unique branch name"
       end
 
+      # Project-aware version
+      def ensure_unique_head_branch_for_project!(repo_dir, branch_name)
+        upstream = @project.upstream_repo
+        fork_owner_name = project_fork_owner
+
+        return branch_name unless remote_branch_exists?(repo_dir, branch_name)
+
+        existing = pr_view(upstream, "#{fork_owner_name}:#{branch_name}")
+        return branch_name if existing
+
+        2.upto(10) do |n|
+          alt = "#{branch_name}-#{n}"
+          next if remote_branch_exists?(repo_dir, alt)
+
+          existing_alt = pr_view(upstream, "#{fork_owner_name}:#{alt}")
+          return alt if existing_alt
+
+          within_repo(repo_dir) { run_git!("branch", "-m", alt) }
+          return alt
+        end
+
+        raise Error, "unable to find unique branch name"
+      end
+
       def push_to_fork!(repo_dir, branch_name)
         within_repo(repo_dir) do
           run_git!(
@@ -158,6 +212,11 @@ module Github
             env: git_env
           )
         end
+      end
+
+      # Project-aware push
+      def push_to_fork_for_project!(repo_dir, branch_name)
+        push_to_fork!(repo_dir, branch_name)
       end
 
       def ensure_pr!(branch_name, base_branch, candidate, draft:)
@@ -220,10 +279,37 @@ module Github
       # PatchBundle-specific methods
 
       def apply_bundle_bump!(repo_dir, bundle)
-        path = File.join(repo_dir, "gems", "bundled_gems")
+        # Use project's file_path for multi-project support
+        file_path = @project&.file_path || "gems/bundled_gems"
+        path = File.join(repo_dir, file_path)
         old_content = File.read(path)
 
-        result =
+        result = bump_for_project(old_content, bundle)
+
+        expected = bundle.proposed_diff.to_s.strip
+        actual = "-#{result.fetch(:old_line).rstrip}\n+#{result.fetch(:new_line).rstrip}"
+        unless expected.blank? || expected == actual
+          raise Error, "proposed diff mismatch (refuse to proceed)"
+        end
+
+        File.write(path, result.fetch(:new_content))
+
+        within_repo(repo_dir) do
+          diff = run_git!("diff", "--name-only").strip
+          raise Error, "unexpected diff files: #{diff.inspect}" unless diff == file_path
+        end
+      end
+
+      def bump_for_project(old_content, bundle)
+        case @project&.file_type
+        when "gemfile_lock"
+          ProjectFiles::GemfileLockBumper.bump!(
+            old_content: old_content,
+            gem_name: bundle.gem_name,
+            target_version: bundle.target_version
+          )
+        else
+          # Default to bundled_gems format (Ruby Core)
           begin
             RubyCore::BundledGemsBumper.bump!(
               old_content: old_content,
@@ -240,24 +326,14 @@ module Github
               target_version: bundle.target_version
             )
           end
-
-        expected = bundle.proposed_diff.to_s.strip
-        actual = "-#{result.fetch(:old_line).rstrip}\n+#{result.fetch(:new_line).rstrip}"
-        unless expected.blank? || expected == actual
-          raise Error, "proposed diff mismatch (refuse to proceed)"
-        end
-
-        File.write(path, result.fetch(:new_content))
-
-        within_repo(repo_dir) do
-          diff = run_git!("diff", "--name-only").strip
-          raise Error, "unexpected diff files: #{diff.inspect}" unless diff == "gems/bundled_gems"
         end
       end
 
       def ensure_pr_for_bundle!(branch_name, base_branch, bundle, draft:)
-        upstream = @config.upstream_repo
-        head = "#{fork_owner}:#{branch_name}"
+        # Use project's upstream_repo for multi-project support
+        upstream = @project&.upstream_repo || @config.upstream_repo
+        fork_owner_name = @project ? project_fork_owner : fork_owner
+        head = "#{fork_owner_name}:#{branch_name}"
 
         existing = pr_view(upstream, head)
         return existing if existing
@@ -279,10 +355,13 @@ module Github
       end
 
       def pr_body_for_bundle(bundle)
+        file_path = @project&.file_path || "gems/bundled_gems"
+        file_type_label = @project&.file_type == "gemfile_lock" ? "dependency" : "bundled gem"
+
         lines = []
         lines << "## Summary"
-        lines << "- Security bump for bundled gem `#{bundle.gem_name}`."
-        lines << "- Scope: version bump only (`gems/bundled_gems`)."
+        lines << "- Security bump for #{file_type_label} `#{bundle.gem_name}`."
+        lines << "- Scope: version bump only (`#{file_path}`)."
         lines << ""
         lines << "## Security Advisories Addressed"
         lines << ""
@@ -330,6 +409,19 @@ module Github
 
       def fork_owner
         @config.fork_repo.split("/", 2).first
+      end
+
+      # Project-aware URL helpers
+      def project_upstream_https_url
+        "https://github.com/#{@project.upstream_repo}.git"
+      end
+
+      def project_fork_git_url
+        "git@github.com:#{@project.fork_repo}.git"
+      end
+
+      def project_fork_owner
+        @project.fork_repo.split("/", 2).first
       end
 
       def git_env
