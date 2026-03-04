@@ -7,10 +7,10 @@ image: dan1d/automatic_patch
 # Deploy to these servers.
 servers:
   web:
-    - 165.22.146.37
+    - 5.161.185.121
   # job:
   #   hosts:
-  #     - 192.168.0.1
+  #     - 5.161.185.121
   #   cmd: bin/jobs
 
 # Enable SSL auto certification via Let's Encrypt and allow for multiple apps on a single web server.
@@ -52,15 +52,15 @@ env:
     # Hostname used by Rails (mailer URLs, allowed hosts, etc.).
     APP_HOST: vulnsentry.com
 
-    # DigitalOcean Managed Postgres requires SSL.
-    PGSSLMODE: require
+    # Local Postgres on same server (Kamal accessory) — no SSL needed.
+    PGSSLMODE: disable
 
-    # DigitalOcean Managed Postgres connection details (non-secret).
-    PGHOST: dbaas-db-9428295-do-user-32505526-0.k.db.ondigitalocean.com
-    PGPORT: 25060
-    PGUSER: doadmin
+    # Postgres connection details (container on same Docker network).
+    PGHOST: automatic_patch-db
+    PGPORT: 5432
+    PGUSER: automatic_patch
 
-    # Multi-DB setup (recommended): create these 4 DBs in your DO cluster.
+    # Multi-DB setup: extra DBs created by init-extra-dbs.sql in the Postgres accessory.
     PRIMARY_DB_NAME: automatic_patch_production
     CACHE_DB_NAME: automatic_patch_production_cache
     QUEUE_DB_NAME: automatic_patch_production_queue
@@ -122,26 +122,19 @@ builder:
 # ssh:
 #   user: app
 
-# Use accessory services (secrets come from .kamal/secrets).
-# accessories:
-#   db:
-#     image: mysql:8.0
-#     host: 192.168.0.2
-#     # Change to 3306 to expose port to the world instead of just local network.
-#     port: "127.0.0.1:3306:3306"
-#     env:
-#       clear:
-#         MYSQL_ROOT_HOST: '%'
-#       secret:
-#         - MYSQL_ROOT_PASSWORD
-#     files:
-#       - config/mysql/production.cnf:/etc/mysql/my.cnf
-#       - db/production.sql:/docker-entrypoint-initdb.d/setup.sql
-#     directories:
-#       - data:/var/lib/mysql
-#   redis:
-#     image: valkey/valkey:8
-#     host: 192.168.0.2
-#     port: 6379
-#     directories:
-#       - data:/data
+# Accessory services (secrets come from .kamal/secrets).
+accessories:
+  db:
+    image: postgres:16
+    host: 5.161.185.121
+    port: "127.0.0.1:5432:5432"
+    env:
+      clear:
+        POSTGRES_USER: automatic_patch
+        POSTGRES_DB: automatic_patch_production
+      secret:
+        - POSTGRES_PASSWORD
+    files:
+      - config/postgres/init-extra-dbs.sql:/docker-entrypoint-initdb.d/init-extra-dbs.sql
+    directories:
+      - automatic_patch_postgres_data:/var/lib/postgresql/data
